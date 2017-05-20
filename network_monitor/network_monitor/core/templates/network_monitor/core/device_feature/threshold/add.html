@@ -1,0 +1,35 @@
+{% extends "network_monitor/core/base.html" %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+
+{% block breadcrumb_items %}
+<li><a href="{% url 'core:device-list' %}">Device List</a></li>
+<li><a href="{% url 'core:device-features' device_feature.device.pk %}">{{device_feature.device}}</a></li>
+<li><a href="{% url 'device-feature-threshold-list' device_feature.device.pk device_feature.feature %}">Thresholds List</a></li>
+<li>{{device_feature.feature}} New Threshold</li>
+{% endblock %}
+
+{% block content %}
+{% block page_title %}
+<h3 class="page-title">Add New Threshold: {{threshold_type}}</h3>
+{% endblock page_title %}
+
+<form class="form-horizontal" enctype="multipart/form-data" method="post" name="add-threshold-form">
+  {% csrf_token %}
+  {% block form_widgets %}
+  {% bootstrap_form form layout='horizontal' form_group_class='form-group row' horizontal_label_class='col-md-2' %}
+  {% endblock form_widgets %}
+  <hr>
+  <div class="form-group">
+    <label class="col-md-2 control-label"></label>
+    <div class="col-md-9">
+      <button type="submit" class="btn btn-primary" name="submit">Save</button>
+      <a class="btn btn-default" href="{% url 'device-feature-threshold-list' device_feature.device.pk device_feature.feature %}">Cancel</a>
+    </div>
+  </div>
+
+</form>
+{% endblock %}
+{% block extra_js %}
+{{form.media}}
+{% endblock %}

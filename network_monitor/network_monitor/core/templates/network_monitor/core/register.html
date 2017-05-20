@@ -1,0 +1,36 @@
+{% extends "network_monitor/core/base.html" %}
+{% load bootstrap3 %}
+
+{% block main-container %}
+<div class="form col-sm-offset-2 col-sm-8">
+
+    <center><h2><strong>Sign Up</strong></h2></center>
+
+      <form id="form-register" method="POST" class="form-horizontal" action="">
+      {% csrf_token %}
+
+      {% bootstrap_form form %}
+
+      <div class="form-group">
+          <button type="submit" class="btn btn-primary"><span class="fa fa-check"></span> Register</button>
+          <a class="btn btn-default" href="{% url 'core:login' %}"><span class="fa fa-close"></span> Cancel</a>
+      </div>
+    </form>
+      <hr>
+</div>
+
+
+{% endblock main-container %}
+
+ {% block javascript %}
+
+ <script type="text/javascript">
+    $( document ).ready(function() {
+
+    $("input[type='text']").addClass('form-control')
+    $("input[type='email']").addClass('form-control')
+    $("input[type='password']").addClass('form-control')
+});
+        </script>
+  {% endblock %}
+

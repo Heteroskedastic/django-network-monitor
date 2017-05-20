@@ -1,0 +1,96 @@
+{% extends "network_monitor/core/base.html" %}
+{% load humanize %}
+{% load util_tags %}
+
+{% block extra_css %}
+    <link href="{{ STATIC_URL }}css/chosen.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block breadcrumb_items %}
+<li><a href="{% url 'core:device-list' %}">Device List</a></li>
+<li>Monitoring Features</li>
+{% endblock %}
+
+{% block content %}
+    <div class="well">
+        <legend class="pad-bot5">
+            <a class="btn btn-sm btn-default" title="Edit Device" href="{% url 'core:device-edit' device.pk %}"><span class="fa fa-pencil"></span></a>
+            <span class="text-primary">{{device|title}}<small class="text-muted"> - <a href="{{ device.web_url }}" target="_blank">{{ device.address }}</a></small></span>
+            {% if device.active %}
+            <span class="label label-success">Enabled</span>
+            {% else %}
+            <span class="label label-danger">Disabled</span>
+            {% endif %}
+            <span class="pull-right" title="Status">{{device|device_status_tag}}</span>
+
+        </legend>
+        <div class="row">
+            <span class="col-md-4">
+                <label class="control-label">Mac Address: </label>
+                <span class="text-primary">{{device.mac|default:'-'}}{% if device.mac_manufacture %} <small class="text-muted"> {{ device.mac_manufacture }}</small> {% endif %}</span>
+            </span>
+            <span class="col-md-4">
+                <label class="control-label">Username: </label>
+                <span class="text-primary">{{device.username|default:'-'}}</span>
+            </span>
+            <span class="col-md-4">
+                <label class="control-label">Password: </label>
+            {% if perms.core.access_device_secret_data %}
+                <span class="togglable-password"></span> <span class="text-primary">{{device.password|default:'N/A'}}</span>
+            {% else %}
+                <span class="fa fa-ban text-danger" title="No Access!"></span>
+            {% endif %}
+            </span>
+        </div>
+        <span class="row">
+            <span class="col-md-4">
+                <label class="control-label">Location: </label>
+                <span class="text-primary">{{device.location|default:'-'}}</span>
+            </span>
+            <span class="col-md-4">
+                <label class="control-label">Note: </label>
+                <span class="text-primary">{{device.note|default:'-'}}</span>
+            </span>
+            <span class="col-md-4">
+                <label class="control-label">Tags: </label>
+                <span class="text-primary">{% tags_span device.tags cls='info' %}</span>
+            </span>
+        </span>
+    </div>
+    <h4 class="page-title">Monitoring Features of "{{device}}"</h4>
+
+    <table class="table table-hover table-advance">
+        <tr>
+            <th>Feature Name</th>
+            <th>Round Interval</th>
+            <th>Enabled?</th>
+            <th class="device-features-table-actions-col">Actions</th>
+        </tr>
+        {% for feature in features %}
+        <tr>
+            <td><span class="feature-name"><a href="{% url 'device-feature-charts' device.id feature.feature %}">{{ feature.feature }}</a></span> <small class="text-muted">{{feature.app_feature.verbose_name|default:'-'}}</small></td>
+            <td>{{ feature.round_interval }} seconds</td>
+            <td>{{feature.active|active_icon}}</td>
+            <td>
+                <a class="btn btn-sm btn-primary" title="View Charts and Reports" href="{% url 'device-feature-charts' device.id feature.feature %}"><span class="fa fa-bar-chart"></span></a>
+                <a class="btn btn-sm btn-default" title="Configure Monituring" href="{% url 'device-feature-config' device.id feature.feature %}"><span class="fa fa-gears"></span></a>
+                <a class="btn btn-sm btn-default" title="Event Thresholds" href="{% url 'device-feature-threshold-list' device.id feature.feature %}"><span class="fa fa-random"></span></a>
+            </td>
+
+        </tr>
+        {% empty %}
+        <tr><td class="text-center gray-color" colspan="4"> <em>[NO RECORD!]</em></td></tr>
+        {% endfor %}
+    </table>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ STATIC_URL }}js/chosen.jquery.min.js"></script>
+<script src="{{ STATIC_URL }}js/utils.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function () {
+    togglablePassword('.togglable-password');
+});
+</script>
+{% endblock %}

@@ -1,0 +1,189 @@
+{% extends "network_monitor/core/base.html" %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+
+{% block extra_css %}
+  <link href="{{ STATIC_URL }}css/bootstrap-toggle.min.css" rel="stylesheet">
+{% endblock %}
+
+
+{% block breadcrumb_items %}
+<li><a href="{% url 'core:user_alert_rule-list' %}">Settings</a></li>
+<li><a href="{% url 'core:user_alert_rule-list' %}">Alert Rules</a></li>
+<li>Edit Alert Rule</li>
+{% endblock %}
+
+{% block content %}
+<h3 class="page-title">Edit Alert Rule "{{object}}"</h3>
+
+<form name="rule-form" class="form-horizontal" enctype="multipart/form-data" method="post">
+  {% block form-controls %}
+  {% csrf_token %}
+  {% bootstrap_form form layout='horizontal' form_group_class='form-group row' horizontal_label_class='col-md-2' exclude='rules,custom_message' %}
+  <div class="form-group row">
+      <label class="col-md-1 control-label"></label>
+      <button type="button" id="toggle-advanced-options" data-toggle="collapse" data-target="#alert-rule-advanced-options" class="btn btn-link">
+          <span class="fa {% if form.instance.custom_message %}fa-minus{% else %}fa-plus{% endif %}"></span> Advanced options
+      </button>
+  </div>
+  <div class="form-group row collapse {% if form.instance.custom_message %}in{% endif %}" id="alert-rule-advanced-options">
+      <label class="col-md-2 control-label">{{ form.custom_message.label }}</label>
+      <div class="col-md-9">
+        <div id="" class="">
+            {% bootstrap_field form.custom_message show_label=False %}
+        </div>
+      </div>
+  </div>
+
+  <div class="form-group row">
+      <label class="col-md-2 control-label" for="rule_join_by">Where</label>
+      <div class="col-md-9">
+        <select name="join_by" id="rule_join_by">
+          <option value='and' {% if form.instance.rules.join_by == 'and' %}selected{% endif %}>All</option>
+          <option value='or' {% if form.instance.rules.join_by == 'or' %}selected{% endif %}>Any</option>
+        </select> of the following rules:
+      </div>
+  </div>
+  <div class="form-group row">
+      <label class="col-md-2 control-label" for="">Rules</label>
+      <input type="hidden" name="rules" id="id_rules">
+      <div class="col-md-9">
+        <div class="well">
+          <table id="rules-table" class="table table-striped table-bordered">
+            <thead>
+              <tr>
+                <th>Parameter</th><th>Comparator</th><th>Condition value</th><th class="rule-conds-table-actions-col">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+      </div>
+  </div>
+  {% endblock form-controls %}
+  <hr>
+  <div class="form-group">
+    <label class="col-md-2 control-label"></label>
+    <div class="col-md-9">
+      <button type="submit" class="btn btn-primary" name="submit">Save</button>
+      <a class="btn btn-default" href="{% url 'core:user_alert_rule-list' %}">Cancel</a>
+      <span class="pull-right">
+        <button type="button" class="btn btn-danger" name="delete"><span class="fa fa-trash"></span> Delete</button>
+      </span>
+    </div>
+  </div>
+</form>
+
+{% url 'core:user_alert_rule-delete' object.id as delete_action %}
+{% include "network_monitor/core/partials/action_modal.html" with prefix_id='action' message_class='text-danger' title='Delete Device' message='Are you sure to delete?' action=delete_action %}
+
+{% endblock %}
+{% block extra_js %}
+{{form.media}}
+<script src="{{ STATIC_URL }}js/bootstrap-toggle.min.js"></script>
+<script src="{{ STATIC_URL }}js/utils.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function () {
+  $('.collapse').on('show.bs.collapse', function() {
+    $(this).parent().find("#toggle-advanced-options .fa-plus").removeClass("fa-plus").addClass("fa-minus");
+  }).on('hidden.bs.collapse', function() {
+    $(this).parent().find(".fa-minus").removeClass("fa-minus").addClass("fa-plus")
+  });
+  bindModalAction('actionModal', 'delete');
+  ruleParamStruct = {
+    severity: {
+      choices: {{severity_choices|safe}},
+      comparators: ['eq', 'neq', 'gt', 'gte', 'lt', 'lte']
+    },
+    device: {
+      choices: {{device_choices|safe}},
+      comparators: ['eq', 'neq']
+    },
+    feature: {
+      choices: {{feature_choices|safe}},
+      comparators: ['eq', 'neq']
+    },
+    threshold: {
+      choices: {{threshold_choices|safe}},
+      comparators: ['eq', 'neq']
+    },
+    summary: {
+      comparators: ['eq', 'neq', 'contains', 'icontains', 'startswith', 'endswith']
+    }
+  };
+  onChangeRuleP = function(combo) {
+    var value = combo.value,
+      ruleVSelect = $(combo).parents('tr').find('select[name=rule-v]'),
+      ruleOSelect = $(combo).parents('tr').find('select[name=rule-o]');
+    if (ruleParamStruct[value].choices == undefined) {
+      $(combo).parents('tr').find('input[name=rule-v]').show().prop('required', true);
+      ruleVSelect.hide().prop('required', false);;
+    } else {
+      $(combo).parents('tr').find('input[name=rule-v]').hide().prop('required', false);
+      ruleVSelect.show().prop('required', true);
+      ruleVSelect.find('option').remove();
+      ruleParamStruct[value].choices.forEach(function(v) {
+        ruleVSelect.append('<option value="'+v[0]+'">'+v[1]+'</option>');
+      });
+    }
+    ruleOSelect.find('option').hide();
+    ruleParamStruct[value].comparators.forEach(function(v) {
+      ruleOSelect.find('option[value='+v+']').show();
+    })
+  };
+  removeRule = function(elem) {
+    if ($(elem).closest('tbody').find('tr').length == 1) {
+      return;
+    }
+    $(elem).closest('tr').remove();
+  };
+  insertRule = function(afterElem) {
+    tr = $('<tr><td><select name="rule-p" onchange="onChangeRuleP(this)"><option value="severity">severity</option><option value="feature">feature</option><option value="threshold">threshold</option><option value="device">device</option><option value="summary">summary</option></select></td><td><select name="rule-o"><option value="eq">Equal (=)</option><option value="neq">Not Equal (!=)</option><option value="gt">Greater than (>)</option><option value="gte">Greater than or equal to (>=)</option><option value="lt">Less than (<)</option><option value="lte">Less than or equal to (<=)</option><option value="contains">Contains(case sensitive)</option><option value="icontains">IContains(case insensitive)</option><option value="startswith">Starts with</option><option value="endswith">Ends with</option></select></td><td><input type="text" name="rule-v" style="display:none;"><select name="rule-v"></select></td><td><button type="button" name="rule-add" title="Insert After" class="btn btn-sm btn-success" onclick="insertRule(this)"><span class="fa fa-plus"></span></button> <button type="button" name="rule-delete" title="Delete" class="btn btn-sm btn-danger" onclick="removeRule(this)"><span class="fa fa-trash"></span></button></td></tr>')
+    if (!afterElem) {
+      $('#rules-table tbody').append(tr);
+    } else {
+      tr.insertAfter($(afterElem).closest('tr'));
+    }
+    onChangeRuleP(tr.find('select[name=rule-p]')[0])
+    return tr;
+  };
+
+  initialRules = function () {
+    var rules = {{form.instance.rules|safe}};
+    if (!rules.conditions) {
+      insertRule();
+      return;
+    }
+    rules.conditions.forEach(function (c) {
+      var tr = insertRule();
+      tr.find('[name=rule-p]').val(c.p)[0].onchange();
+      tr.find('[name=rule-v]:visible').val(c.v);
+      tr.find('[name=rule-o]').val(c.o);
+    });
+  };
+  $('form[name=rule-form]').submit(function() {
+    var join_by = $('#rule_join_by').val(),
+      conditions = [];
+    $('#rules-table tbody tr').each(function(i, tr) {
+      conditions.push({
+        v: $(tr).find('[name=rule-v]:visible').val(),
+        o: $(tr).find('[name=rule-o]:visible').val(),
+        p: $(tr).find('[name=rule-p]:visible').val(),
+      });
+    });
+    if (conditions.length == 0) {
+      alert('No Rule Record!');
+      return false;
+    }
+    var jdata = {
+      join_by: join_by,
+      conditions: conditions
+    };
+    $('#id_rules').val(JSON.stringify(jdata));
+  });
+  initialRules();
+});
+</script>
+{% endblock %}

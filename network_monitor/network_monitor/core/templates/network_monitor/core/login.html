@@ -1,0 +1,60 @@
+{% extends "network_monitor/core/base.html" %}
+{% load util_tags %}
+
+{% block extra_css %}
+<style type="text/css">
+  body {
+    padding-top: 40px;
+    padding-bottom: 40px;
+    background-color: #eee;
+  }
+</style>
+{% endblock %}
+{% block breadcrumb %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="onl_login">
+        <h3 class="onl_authTitle" data-toggle="tooltip" data-placement="bottom" title="Recommended: Lumen Theme">Login or <a href="{% url 'core:register' %}">Sign up</a></h3>
+        <div class="row onl_row-sm-offset-3 onl_socialButtons">
+          <div class="col-xs-2 col-sm-2">
+            <a href="{% url 'social:begin' 'google-oauth2' %}" class="btn btn-block onl_btn-google-plus" data-toggle="tooltip" data-placement="top" title="Google Plus">
+              <i class="fa fa-google-plus fa-2x"></i>
+              <span class="hidden-xs"></span>
+            </a>
+          </div>
+    </div><br>
+
+    <div class="row onl_row-sm-offset-3 onl_loginOr">
+      <div class="col-xs-12 col-sm-6">
+        <hr class="onl_hrOr">
+        <span class="onl_spanOr">or</span>
+      </div>
+    </div>
+
+    <div class="row onl_row-sm-offset-3">
+      <div class="col-xs-12 col-sm-6">
+        <form id="form-login" method="POST" class="form-horizontal" action="">
+          {% csrf_token %}
+          {% for field in form.visible_fields %}
+            <div class="form-group">
+                <label for="{{field.id_for_label}}" class="col-sm-2 control-label">{{field.label}}</label>
+                <div class="col-sm-6">
+                  {{ field }}
+                  {{ field.errors }}
+                  {{ field.help_text }}
+                </div>
+            </div>
+          {% endfor %}
+          <div class="form-group">
+              <div class="col-sm-offset-2 col-sm-6">
+                <button type="submit" class="btn btn-primary">Login</button>
+              </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

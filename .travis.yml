@@ -1,0 +1,19 @@
+language: python
+python:
+  - "3.4"
+  - "3.5"
+  # - "nightly" # currently points to 3.6-dev
+
+# command to install dependencies
+install:
+    - "pip install -r requirements.txt"
+before_script:
+  # - python network_monitor/manage.py migrate --noinput
+# command to run tests
+script:
+  - python network_monitor/manage.py test --settings=network_monitor.settings.test
+
+notifications:
+  email: false
+
+after_success:

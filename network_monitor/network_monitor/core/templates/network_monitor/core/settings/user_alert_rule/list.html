@@ -1,0 +1,60 @@
+{% extends "network_monitor/core/base.html" %}
+{% load humanize %}
+{% load pagination_tags %}
+{% load util_tags %}
+
+{% block extra_css %}
+    <link href="{{ STATIC_URL }}css/chosen.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block breadcrumb_items %}
+<li><a href="{% url 'core:user_alert_rule-list' %}">Settings</a></li>
+<li>Alert Rules</li>
+{% endblock %}
+
+{% block content %}
+    <a href="{% url 'core:user_alert_rule-add' %}" class="btn btn-success pull-right"><span class="fa fa-plus"></span> New Alert Rule</a><h3 class="page-title">Alert Rule List</h3>
+
+    <table class="table table-hover table-advance">
+        <tr>
+            <th>Name</th>
+            <th>Notify by</th>
+            <th>Enabled?</th>
+            <th class="alert-rule-list-table-actions-col">Actions</th>
+        </tr>
+        {% for rule in alert_rules %}
+        <tr data-id="{{rule.id}}">
+            <td><a href="{% url 'core:user_alert_rule-edit' rule.pk %}">{{ rule.name|title }}</a></td>
+            <td>{{ rule.notify_media|join:', ' }}</td>
+            <td>{{ rule.active|active_icon }}</td>
+            <td>
+                <a class="btn btn-sm btn-default" title="Edit Alert Rule" href="{% url 'core:user_alert_rule-edit' rule.pk %}"><span class="fa fa-pencil"></span></a>
+                {% if rule.active %}
+                <button name="disable-rule" class="btn btn-sm btn-warning" title="Disable Rule"><span class="fa fa-close"></span></button>
+                {% else %}
+                <button name="enable-rule" class="btn btn-sm btn-success" title="Enable Rule"><span class="fa fa-check"></span></button>
+                {% endif %}
+                <button class="btn btn-sm btn-danger" title="Delete Alert Rule" name="delete-rule"><span class="fa fa-trash"></span></button>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td class="text-center gray-color" colspan="8"> <em>[NO RECORD!]</em></td></tr>
+        {% endfor %}
+    </table>
+
+{% include "network_monitor/core/partials/action_modal.html" with prefix_id='action' message_class='text-danger' %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ STATIC_URL }}js/chosen.jquery.min.js"></script>
+<script src="{{ STATIC_URL }}js/utils.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function () {
+    bindModalAction('actionModal', 'delete-rule', 'Delete Alert Rule', 'Are you sure to delete?', '{% url 'core:user_alert_rule-delete' 0 %}');
+    bindModalAction('actionModal', 'enable-rule', 'Enable Alert Rule', 'Are you sure to Enable?', '{% url 'core:user_alert_rule-switch-active' 0 %}');
+    bindModalAction('actionModal', 'disable-rule', 'Disable Alert Rule', 'Are you sure to Disable?', '{% url 'core:user_alert_rule-switch-active' 0 %}');
+
+});
+</script>
+{% endblock %}

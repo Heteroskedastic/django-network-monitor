@@ -1,0 +1,22 @@
+{% extends "network_monitor/base.html" %}
+{% block title %}Network Monitoring Dashboard{% endblock %}
+{% block main_css %}
+    {{ block.super }}
+    <link href="{{ STATIC_URL }}css/dashboard.css" rel="stylesheet">
+{% endblock %}
+
+{% block breadcrumb %}
+<div class="row">
+    <div class="col-md-12">
+        <ul class="breadcrumb">
+            <li><a href="{% url 'core:index' %}">Home</a></li>
+            {% block breadcrumb_items %}
+            {% endblock %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
+{% block header_navbar %}
+{% include "network_monitor/core/header.html" %}
+{% endblock header_navbar %}
+

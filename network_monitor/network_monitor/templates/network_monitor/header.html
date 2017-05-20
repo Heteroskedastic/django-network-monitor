@@ -1,0 +1,24 @@
+{% load util_tags %}
+
+    <nav class="navbar navbar-default navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="{% url 'index' %}"><span class="fa fa-desktop"></span> Network Monitoring</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li><a href="#"><span class="fa fa-info-circle"></span> About</a></li>
+            <li><a href="#"><span class="fa fa-question-circle"></span> Help</a></li>
+          </ul>
+          <ul class="nav navbar-nav navbar-right">
+            <li class="{% active_if 'core:login' %}"><a href="{% url 'core:login' %}"><span class="fa fa-sign-in"></span> Login</a></li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>

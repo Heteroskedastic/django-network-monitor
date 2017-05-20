@@ -1,0 +1,35 @@
+{% extends "network_monitor/core/base.html" %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+
+{% block breadcrumb_items %}
+<li>Profile</li>
+{% endblock %}
+
+{% block content %}
+<h3 class="page-title">Edit Your Profile</h3>
+
+<form class="form-horizontal" enctype="multipart/form-data" method="post">
+  {% csrf_token %}
+  <div class="form-group row">
+    <label class="col-md-2 control-label" for="id_username">Username</label>
+    <div class="col-md-9">
+      <input class="form-control" id="id_username" maxlength="30" name="username" type="text" value="{{object.username}}" readonly>
+    </div>
+  </div>
+
+  {% bootstrap_form form layout='horizontal' form_group_class='form-group row' horizontal_label_class='col-md-2' %}
+  <hr>
+  <div class="form-group">
+    <label class="col-md-2 control-label"></label>
+    <div class="col-md-9">
+      <button type="submit" class="btn btn-primary" name="submit">Save</button>
+      <a class="btn btn-default" href="{% url 'core:index' %}">Cancel</a>
+      <div class="pull-right">
+        <a class="btn btn-warning" href="{% url 'core:change-password' %}"><span class="fa fa-key"></span> Change Password</a>
+      </div>
+    </div>
+  </div>
+
+</form>
+{% endblock %}

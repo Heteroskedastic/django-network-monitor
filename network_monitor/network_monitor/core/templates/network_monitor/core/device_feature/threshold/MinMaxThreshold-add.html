@@ -1,0 +1,72 @@
+{% extends "network_monitor/core/device_feature/threshold/add.html" %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link href="{{ STATIC_URL }}css/chosen.min.css" rel="stylesheet">
+  <link href="{{ STATIC_URL }}css/bootstrap-toggle.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block form_widgets %}
+{% bootstrap_form form layout='horizontal' form_group_class='form-group row' horizontal_label_class='col-md-2' exclude='data' %}
+  <hr>
+  <div class="form-group">
+    <label class="col-md-2 control-label"></label>
+    <div class="data-section">
+      <input type="hidden" name="data" id="id_data">
+      <span><strong>IF</strong></span>
+      {% if threshold_config.valid_parameters %}
+      <select name="parameter" class="">
+      {% for p in threshold_config.valid_parameters %}
+        <option value="{{p}}">{{p}}</option>
+      {% endfor %}
+      </select>
+      {% else %}
+        <input type="text" name="parameter" placeholder="Parameter Name" required>
+      {% endif %}
+      <select name="operator" class="minmax-th-operator">
+        <option value=">"> = </option>
+        <option value=">"> > </option>
+        <option value="<"> < </option>
+        <option value=">="> >= </option>
+        <option value="<="> <= </option>
+      </select>
+      <input type="number" name="condition_value" placeholder="Condition Value" required>
+    </div>
+  </div>
+
+{% endblock form_widgets %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="{{ STATIC_URL }}js/chosen.jquery.min.js"></script>
+<script src="{{ STATIC_URL }}js/bootstrap-toggle.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function () {
+  $('select[name=operator]').chosen({
+    allow_single_deselect:true,
+    disable_search: true
+  });
+  $('select[name=parameter]').chosen({
+    allow_single_deselect:true,
+    disable_search: true
+  });
+  $('form[name=add-threshold-form]').submit(function() {
+    var operator = $('.data-section [name=operator]'),
+      condition_value = $('.data-section [name=condition_value]'),
+      parameter = $('.data-section [name=parameter]'),
+      jdata = {
+        args: [operator.val(), condition_value.val()*1],
+        kwargs: {
+          parameter: parameter.val()
+        }
+      };
+    $('#id_data').val(JSON.stringify(jdata));
+  });
+
+});
+</script>
+
+{% endblock %}

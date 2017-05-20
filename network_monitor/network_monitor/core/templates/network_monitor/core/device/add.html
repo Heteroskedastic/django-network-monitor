@@ -1,0 +1,52 @@
+{% extends "network_monitor/core/base.html" %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+
+{% block extra_css %}
+<link href="{{ STATIC_URL }}css/bootstrap-tagsinput.css" rel="stylesheet">
+<link href="{{ STATIC_URL }}css/bootstrap-toggle.min.css" rel="stylesheet">
+<link href="{{ STATIC_URL }}css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block breadcrumb_items %}
+<li><a href="{% url 'core:device-list' %}">Device List</a></li>
+<li>New Device</li>
+{% endblock %}
+
+{% block content %}
+<h3 class="page-title">Add New Device</h3>
+
+<form class="form-horizontal" enctype="multipart/form-data" method="post">
+  {% csrf_token %}
+  {% bootstrap_form form layout='horizontal' form_group_class='form-group row' horizontal_label_class='col-md-2' %}
+  <hr>
+  <div class="form-group">
+    <label class="col-md-2 control-label"></label>
+    <div class="col-md-9">
+      <button type="submit" class="btn btn-primary" name="submit">Save</button>
+      <a class="btn btn-default" href="{% url 'core:device-list' %}">Cancel</a>
+    </div>
+  </div>
+
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ STATIC_URL }}js/bootstrap-tagsinput.min.js"></script>
+<script src="{{ STATIC_URL }}js/bootstrap-toggle.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/moment.min.js"></script>
+<script src="{{ STATIC_URL }}js/bootstrap-datetimepicker.min.js"></script>
+{{form.media}}
+
+<script type="text/javascript">
+$(document).ready(function () {
+  $('#id_purchase_date, #id_manufacture_date, #id_warranty_expiration_date').datetimepicker({
+    format: 'YYYY-MM-DD',
+    showTodayButton: true,
+    useCurrent: false,
+    showClear: true
+  });
+
+});
+</script>
+{% endblock %}

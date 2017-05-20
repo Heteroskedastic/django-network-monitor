@@ -1,0 +1,50 @@
+{% extends "network_monitor/core/device_feature/config.html" %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+{% load util_tags %}
+
+{% block extra_js %}
+{{block.super}}
+
+<script type="text/javascript">
+$(document).ready(function () {
+  var args = {{form.instance.args|json}},
+    argsEditor = new JSONEditor(document.getElementById('args-editor'), {
+      schema: {
+        type: "object",
+        title: " ",
+        properties: {
+          ping_count: {
+            type: "integer"
+          }
+        }
+      },
+      display_required_only: true,
+      startval: {
+        ping_count: args.ping_count
+      },
+      theme: 'bootstrap3',
+      disable_collapse: true,
+      disable_edit_json: true,
+      disable_properties: true,
+    });
+  $('#args-editor div[data-schemaid=root] div.well').removeClass('well-sm well');
+  $('form[name=config-form]').submit(function() {
+    errors = argsEditor.validate();
+    if (errors.length) {
+      return false;
+    }
+  });
+  argsEditor.on('change',function() {
+    errors = argsEditor.validate();
+    if (errors.length) {
+      $('button[name=submit]').attr('disabled', true);
+    } else {
+      $('button[name=submit]').attr('disabled', false);
+      $('#id_args').val(JSON.stringify(argsEditor.getValue()));
+    }
+  });
+});
+</script>
+
+{% endblock %}

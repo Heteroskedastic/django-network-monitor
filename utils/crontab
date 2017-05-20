@@ -1,0 +1,2 @@
+10 1   * * *   appuser /usr/local/bin/network_monitor_backup
+30 2   * * *   appuser /opt/webapps/network_monitor/env/bin/b2 sync /opt/webapps/network_monitor/backup/ b2://network-monitor/backup/

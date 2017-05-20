@@ -1,0 +1,142 @@
+{% extends "network_monitor/core/base.html" %}
+{% load humanize %}
+{% load pagination_tags %}
+{% load util_tags %}
+
+{% block extra_css %}
+    <link href="{{ STATIC_URL }}css/chosen.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block breadcrumb_items %}
+    <li>Device List</li>
+{% endblock %}
+
+{% block content %}
+    <a href="{% url 'core:device-add' %}" class="btn btn-success pull-right"><span class="fa fa-plus"></span> New Device</a><h3 class="page-title">Device List</h3>
+    <div id="filters" class="filters">
+        <h5 class="subtitle">Filters</h5>
+        <form id="filterForm" class="form-inline" role="form" action="">
+            {% if request.GET.order_by %}
+            <input type="hidden" name="order_by" value="{{ request.GET.order_by }}">
+            {% endif %}
+            <input type="hidden" name="page_size" value="{{ request.GET.page_size }}">
+            {% for field in devices.form.visible_fields %}
+            {% if field.name != 'order_by' %}
+            <div class="form-group">
+              {{ field }}
+            </div>
+            {% endif %}
+            {% endfor %}
+            <button type="submit" class="btn btn-primary btn-sm" title="Apply Filter"><span class="fa fa-filter"></span></button>
+            <button type="reset" class="btn btn-danger btn-sm clear-filter" title="Clear All Filters"><span class="fa fa-close"></span></button>
+        </form>
+    </div>
+
+
+    <table class="table table-hover table-advance">
+        <thead>
+            <tr>
+                <th>{% sorting_link 'Name' 'name' %}</th>
+                <th>{% sorting_link 'IP Address' 'address' %}</th>
+                <th>{% sorting_link 'Username' 'username' %}</th>
+                <th>{% sorting_link 'Password' 'password' %}</th>
+                <th>{% sorting_link 'Mac Address' 'mac' %}</th>
+                <th>Features</th>
+                <th>{% sorting_link 'Tags' 'tags' %}</th>
+                <th>{% sorting_link 'Status' 'status' %}</th>
+                <th>{% sorting_link 'Enabled?' 'active' %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% with devices.qs as qs %}
+            {% autopaginate qs page_size %}
+            {% for device in qs %}
+            <tr data-id="{{device.id}}">
+                <td><a href="{% url 'core:device-features' device.pk %}">{{ device.name|title }}</a></td>
+                <td><a href="{{ device.web_url }}" target="_blank">{{ device.address }}</a></td>
+                <td>{{ device.username|default:'-' }}</td>
+                <td>
+                {% if perms.core.access_device_secret_data %}
+                    <span class="togglable-password"></span> <span>{{ device.password|default:'' }}</span>
+                {% else %}
+                    <span class="fa fa-ban text-danger" title="No Access!"></span>
+                {% endif %}
+                </td>
+                <td>{{ device.mac|default:'-' }}{% if device.mac_manufacture %} <small class="text-muted"> {{ device.mac_manufacture }}</small> {% endif %}</td>
+                <td>{% tags_span device.active_features cls='primary' %}</td>
+                <td>{% tags_span device.tags cls='info' %}</td>
+                <td class="status-col">{{ device|device_status_tag }}</td>
+                <td>{{ device.active|active_icon }}</td>
+            </tr>
+            {% empty %}
+            <tr><td class="text-center gray-color" colspan="9"> <em>[NO RECORD!]</em></td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% paginate %}
+        <div class="pull-right mar-top20">
+        {% pagination_info %}
+        {% page_size_combo %}
+    </div>
+
+    {% endwith %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ STATIC_URL }}js/chosen.jquery.min.js"></script>
+<script src="{{ STATIC_URL }}js/utils.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function () {
+    $('#filterForm [name][type!=hidden]').on('change', function(e) {
+        var form = $(this).parents('form');
+        form.submit();
+    });
+
+    $('.page-size').on('change', function() {
+        $('input[name=page_size]').val($(this).val());
+        $('#filterForm').submit();
+    });
+    togglablePassword('.togglable-password');
+    $('.chosen-select-deselect').chosen({allow_single_deselect:true});
+    $('.chosen-select').chosen({allow_single_deselect:true});
+
+    $('.clear-filter').click(function() {
+        var form = $(this).parents('form');
+        $('[name][type!=hidden]', form).val('').attr('disabled', true).trigger("chosen:updated");
+        form.submit();
+    });
+    function refresh_devices_status() {
+        var devices_id = [],
+            url = '{% url 'core:device-status' 0 %}';
+        $('table tbody tr').each(function(i, v) {
+            devices_id.push($(v).attr('data-id'));
+        });
+        url = url.slice(0, -2) + devices_id.join() + '/';
+        $.get(url, function (response) {
+            $.each(response.devices, function (id, d) {
+                var $tr = $('table tbody tr[data-id={0}]'.f(id)),
+                    $td = $tr.find('td.status-col'), label=d.status, cls='muted';
+                if (d.status == 'down') {
+                    if (!d.last_seen) {
+                        label = 'Never Seen';
+                    } else {
+                        label = 'Down({0})'.f(d.last_seen_humanize);
+                        cls = 'danger';
+                    }
+                } else if (d.status == 'up') {
+                    label = 'Up({0})'.f(d.last_seen_humanize);
+                    cls = 'success';
+                }
+                $td.html('<span class="fa fa-circle text-{0}"></span> <span class="text-{0}">{1}</span>'.f(cls, label));
+            });
+        })
+
+    }
+    setInterval(function () {
+        refresh_devices_status();
+    }, 60000);
+});
+</script>
+{% endblock %}

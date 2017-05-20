@@ -1,0 +1,114 @@
+{% extends "network_monitor/core/base.html" %}
+{% load humanize %}
+{% load pagination_tags %}
+{% load util_tags %}
+
+{% block extra_css %}
+    <link href="{{ STATIC_URL }}css/chosen.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block breadcrumb_items %}
+    <li>Event List</li>
+{% endblock %}
+
+{% block content %}
+    <h3 class="page-title">Event List</h3>
+    <div id="filters" class="filters">
+        <h5 class="subtitle">Filters</h5>
+        <form id="filterForm" class="form-inline" role="form" action="">
+            {% if request.GET.order_by %}
+            <input type="hidden" name="order_by" value="{{ request.GET.order_by }}">
+            {% endif %}
+            <input type="hidden" name="page_size" value="{{ request.GET.page_size }}">
+            {% for field in events.form.visible_fields %}
+            {% if field.name != 'order_by' %}
+            <div class="form-group">
+              {{ field }}
+            </div>
+            {% endif %}
+            {% endfor %}
+            <button type="submit" class="btn btn-primary btn-sm" title="Apply Filter"><span class="fa fa-filter"></span></button>
+            <button type="reset" class="btn btn-danger btn-sm clear-filter" title="Clear All Filters"><span class="fa fa-close"></span></button>
+        </form>
+    </div>
+
+
+    <table class="table table-hover table-advance">
+        <tr>
+            <th>{% sorting_link 'ID#' 'id' %}</th>
+            <th>{% sorting_link 'Severity' 'severity' %}</th>
+            <th>{% sorting_link 'Feature' 'feature' %}</th>
+            <th>{% sorting_link 'Device' 'device' %}</th>
+            <th>{% sorting_link 'Threshold' 'threshold' %}</th>
+            <th>{% sorting_link 'Summary' 'summary' %}</th>
+            <th>{% sorting_link 'Message' 'message' %}</th>
+            <th>{% sorting_link 'First Time' 'first_time' %}</th>
+            <th>{% sorting_link 'Last Time' 'last_time' %}</th>
+            <th>{% sorting_link 'Count' 'count' %}</th>
+            <th>{% sorting_link 'Clear Time' 'clear_time' %}</th>
+            <th class="event-list-table-actions-col">Actions</th>
+        </tr>
+        {% with events.qs as qs %}
+        {% autopaginate qs page_size %}
+        {% for event in qs %}
+        <tr data-id="{{event.id}}">
+            <td>{{ event.id }}</td>
+            <td>{{ event.severity|severity_tag }}</td>
+            <td>{{ event.feature }}</td>
+            <td><a href="{% url 'core:device-features' event.device.pk %}">{{ event.device }}</a></td>
+            <td>{{ event.threshold|default:'-' }}</td>
+            <td><span data-toggle="tooltip" data-placement="bottom" data-html="true" title="{{ event.summary|default:'NO MESSAGE!'|safe }}">{{ event.summary|striptags|truncatechars:50|default:'-' }}</span></td>
+            <td><span data-toggle="tooltip" data-placement="bottom" data-html="true" title="{{ event.message|default:'NO MESSAGE!'|safe }}">{{ event.message|striptags|truncatechars:50|default:'-' }}</span></td>
+            <td title="{{event.first_time}}">{{ event.first_time|naturaltime }}</td>
+            <td title="{{event.last_time}}">{{ event.last_time|naturaltime }}</td>
+            <td>{{ event.count }}</td>
+            <td title="{{event.clear_time|default:'Not cleared yet!'}}">{{ event.clear_time|naturaltime|default:'-' }}</td>
+            <td>
+                <button class="btn btn-sm btn-danger" name="delete-event"><span class="fa fa-trash"></span></button>
+            </td>
+
+        </tr>
+        {% empty %}
+        <tr><td class="text-center gray-color" colspan="11"> <em>[NO RECORD!]</em></td></tr>
+        {% endfor %}
+    </table>
+    {% paginate %}
+    <div class="pull-right mar-top20">
+        {% pagination_info %}
+        {% page_size_combo %}
+    </div>
+    {% endwith %}
+
+{% include "network_monitor/core/partials/action_modal.html" with prefix_id='action' message_class='text-danger' %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ STATIC_URL }}js/chosen.jquery.min.js"></script>
+<script src="{{ STATIC_URL }}js/utils.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function () {
+    $('#filterForm [name][type!=hidden]').on('change', function(e) {
+        var form = $(this).parents('form');
+        form.submit();
+    });
+    $('.page-size').on('change', function() {
+        $('input[name=page_size]').val($(this).val());
+        $('#filterForm').submit();
+    });
+
+    $('.chosen-select-deselect').chosen({allow_single_deselect:true});
+    $('#id_severity').chosen({allow_single_deselect:true});
+    $('#id_threshold').chosen({allow_single_deselect:true});
+    $('#id_device').chosen({allow_single_deselect:true});
+
+    $('.clear-filter').click(function() {
+        var form = $(this).parents('form');
+        $('[name][type!=hidden]', form).val('').attr('disabled', true).trigger("chosen:updated");
+        form.submit();
+    });
+    bindModalAction('actionModal', 'delete-event', 'Delete Event', 'Are you sure to delete?', '{% url 'core:event-delete' 0 %}');
+});
+</script>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "network_monitor/core/base.html" %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+
+{% block breadcrumb_items %}
+<li><a href="{% url 'core:device-list' %}">Device List</a></li>
+<li><a href="{% url 'core:device-features' device_feature.device.pk %}">{{device_feature.device}}</a></li>
+<li>{{device_feature.feature}} Charts</li>
+{% endblock %}
+
+{% block content %}
+<h3 class="page-title">"{{device_feature.feature}}" Charts and Reports of Device "{{device_feature.device}}"</h3>
+
+{% block chart_section %}
+<h4 class="text-danger"> NO CHART AND REPORT IMPLEMENTED!</h4>
+{% endblock chart_section %}
+
+{% endblock %}
+{% block extra_js %}
+{{form.media}}
+{% endblock %}

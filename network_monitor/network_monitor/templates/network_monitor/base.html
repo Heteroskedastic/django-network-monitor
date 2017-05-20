@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+
+    <title>{% block title %}Network Monitoring System{% endblock %}</title>
+
+    {% block main_css %}
+    <link href="{{ STATIC_URL }}css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ STATIC_URL }}css/font-awesome.min.css" rel="stylesheet">
+    <link href="{{ STATIC_URL }}css/base.css" rel="stylesheet">
+    {% endblock %}
+    {% block extra_css %}
+    {% endblock %}
+  </head>
+
+  <body>
+    {% block container %}
+      {% block header %}
+        {% block header_navbar %}
+        {% include "network_monitor/header.html" %}
+        {% endblock header_navbar %}
+         <div class="messages">
+        {% if messages %}
+            {% for message in messages %}
+            {% if message.level < 100 %}
+            <div class='alert alert-{{ message.tags }} alert-dismissible'>
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              {{ message }}
+            </div>
+            {% endif %}
+
+            {% endfor %}
+        {% endif %}
+        </div>
+
+      {% endblock%}
+
+      {% block main-container %}
+
+        <div class="container main-container">
+
+          {% block breadcrumb %}
+          {% endblock %}
+
+          {% block content %}
+
+          {% endblock%}
+         </div>
+      {% endblock%}
+      {% block footer %}
+      <footer class="footer">
+        <div class="container">
+          <p class="text-muted">2017 © Heteroskedastic Consulting Group.</p>
+        </div>
+      </footer>
+      {% endblock%}
+    {% endblock%}
+    {% block main_js %}
+    <script src="{{ STATIC_URL }}js/jquery.js"></script>
+    <script src="{{ STATIC_URL }}js/bootstrap.min.js"></script>
+    <script type="text/javascript">
+    $(document).ready(function () {
+      $('body').on('click', 'a[disabled], a.disabled', function(event) {
+          event.preventDefault();
+      });
+      setTimeout(function() {
+        $(".messages .alert-success").fadeTo(5000, 500).slideUp(500, function(){
+          $(".messages .alert-success").alert('close');
+        });
+      }, 2000);
+    });
+    </script>
+
+    {% endblock %}
+    {% block extra_js %}
+    {% endblock %}
+
+  </body>
+</html>

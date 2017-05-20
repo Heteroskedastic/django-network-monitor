@@ -1,0 +1,48 @@
+{% extends "network_monitor/core/base.html" %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+
+{% block extra_css %}
+<link href="{{ STATIC_URL }}css/bootstrap-toggle.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block breadcrumb_items %}
+<li><a href="{% url 'core:device-list' %}">Device List</a></li>
+<li><a href="{% url 'core:device-features' object.device.pk %}">{{object.device}}</a></li>
+<li>{{object.feature}} Settings</li>
+{% endblock %}
+
+{% block content %}
+<h3 class="page-title">Update "{{object.feature}}" Settings of Device "{{object.device}}"</h3>
+
+{% block form_section %}
+<form name="config-form" class="form-horizontal" enctype="multipart/form-data" method="post">
+  {% csrf_token %}
+  {% bootstrap_form form layout='horizontal' form_group_class='form-group row' horizontal_label_class='col-md-2' exclude='conf, args' %}
+  <input type="hidden" name="conf" id="id_conf" value="{}">
+  <input type="hidden" name="args" id="id_args">
+  <div class="form-group well">
+    <label class="col-md-2 control-label">Commands Arguments</label>
+    <div class="col-md-9">
+      <div class="" id="args-editor"></div>
+    </div>
+  </div>
+  <hr>
+  <div class="form-group">
+    <label class="col-md-2 control-label"></label>
+    <div class="">
+      <button type="submit" class="btn btn-primary" name="submit">Save</button>
+      <a class="btn btn-default" href="{% url 'core:device-features' object.device.pk %}">Cancel</a>
+    </div>
+  </div>
+
+</form>
+{% endblock form_section %}
+
+{% endblock %}
+{% block extra_js %}
+{{form.media}}
+<script src="{{ STATIC_URL }}js/jsoneditor.min.js"></script>
+<script src="{{ STATIC_URL }}js/bootstrap-toggle.min.js"></script>
+
+{% endblock %}

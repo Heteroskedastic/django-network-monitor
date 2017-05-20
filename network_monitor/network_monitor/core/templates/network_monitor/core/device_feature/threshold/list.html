@@ -1,0 +1,73 @@
+{% extends "network_monitor/core/base.html" %}
+{% load humanize %}
+{% load pagination_tags %}
+{% load util_tags %}
+
+{% block extra_css %}
+    <link href="{{ STATIC_URL }}css/chosen.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block breadcrumb_items %}
+<li><a href="{% url 'core:device-list' %}">Device List</a></li>
+<li><a href="{% url 'core:device-features' device_feature.device.pk %}">{{device_feature.device}}</a></li>
+<li>{{device_feature.feature}} Threshold List</li>
+{% endblock %}
+
+{% block content %}
+    <div class="btn-group pull-right">
+        <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" {% if not avail_threshold_types %}disabled title="No Threshold Type defined for {{device_feature.feature}}"{% endif %}><span class="fa fa-plus"></span> New Threshold <span class="caret"></span></button>
+        <ul class="dropdown-menu">
+        {% for th_type in avail_threshold_types %}
+            <li><a class="dropdown-item" href="{% url 'device-feature-threshold-add' device_feature.device.id device_feature.feature th_type %}">{{th_type}}</a></li>
+        {% endfor %}
+        </ul>
+    </div><h3 class="page-title">"{{device_feature.feature}}" Event Threshold List of Device "{{device_feature.device}}"</h3>
+
+    <table class="table table-hover table-advance">
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Severity</th>
+            <th>Data</th>
+            <th>Enabled?</th>
+            <th class="threshold-list-table-actions-col">Actions</th>
+        </tr>
+        {% for threshold in thresholds %}
+        <tr data-id="{{threshold.id}}">
+            <td>{{threshold.name}}</td>
+            <td>{{threshold.type}}</td>
+            <td>{{threshold.severity|severity_tag}}</td>
+            <td>{{threshold.threshold_object.humanize|default:threshold.data}}</td>
+            <td>{{threshold.active|active_icon}}</td>
+            <td>
+                {% if threshold.active %}
+                <button name="disable-threshold" class="btn btn-sm btn-warning" title="Disable Threshold"><span class="fa fa-close"></span></button>
+                {% else %}
+                <button name="enable-threshold" class="btn btn-sm btn-success" title="Enable Threshold"><span class="fa fa-check"></span></button>
+                {% endif %}
+                <button class="btn btn-sm btn-danger" name="delete-threshold"><span class="fa fa-trash"></span></button>
+                <a class="btn btn-sm btn-default" title="List of Events!" href="{% url 'core:event-list' %}?threshold={{threshold.id}}"><span class="fa fa-bullhorn"></span></a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td class="text-center gray-color" colspan="6"> <em>[NO RECORD!]</em></td></tr>
+        {% endfor %}
+    </table>
+
+{% include "network_monitor/core/partials/action_modal.html" with prefix_id='action' message_class='text-danger' %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ STATIC_URL }}js/chosen.jquery.min.js"></script>
+<script src="{{ STATIC_URL }}js/utils.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function () {
+  bindModalAction('actionModal', 'delete-threshold', 'Delete Threshold', 'Are you sure to delete?', '{% url 'device-feature-threshold-delete' device_feature.device.id device_feature.feature 0 %}');
+  bindModalAction('actionModal', 'enable-threshold', 'Enable Threshold', 'Are you sure to Enable?', '{% url 'device-feature-threshold-switch' device_feature.device.id device_feature.feature 0 %}');
+  bindModalAction('actionModal', 'disable-threshold', 'Disable Threshold', 'Are you sure to Disable?', '{% url 'device-feature-threshold-switch' device_feature.device.id device_feature.feature 0 %}');
+
+});
+</script>
+{% endblock %}

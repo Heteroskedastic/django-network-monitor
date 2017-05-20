@@ -1,0 +1,141 @@
+{% extends "network_monitor/core/device_feature/charts.html" %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+{% load util_tags %}
+
+{% block extra_css %}
+{{block.super}}
+<link rel="stylesheet" href="{{ STATIC_URL }}css/bootstrap-datetimepicker.min.css">
+<style>
+input[name=choose_chart_date] {
+  height: 33px;
+  width: 85px;
+}
+</style>
+{% endblock %}
+
+{% block chart_section %}
+    <div class="panel panel-info">
+        <div class="panel-heading"><h4>Ping Time and Packet loss Charts: <span class=""><strong>{{chart_date}}</strong></span><h4></div>
+        <div class="panel-body">
+          <div class="col-md-12">
+            <strong>Jump to date:</strong>
+            {% url 'device-feature-charts' device_feature.device.id device_feature.feature as current_url %}
+            {% now "Y-m-d" as today_date %}
+            <a href="{{current_url}}?chart_date={% add_date chart_date days=-1 %}" class="btn btn-info" title="Previous Date"><span class="fa fa-chevron-left"></span></a>
+            <input type="text" name="choose_chart_date" value="{{chart_date|date:'Y-m-d'}}">
+            <a href="{{current_url}}?chart_date={% add_date chart_date days=1 %}" class="btn btn-info" title="Next Date" {% if today_date <= chart_date|date:"Y-m-d" %}disabled{% endif %}><span class="fa fa-chevron-right"></span></a>
+            <a href="{{current_url}}?chart_date=0" class="btn btn-info">Today</a>
+            <a href="{{current_url}}?chart_date=1" class="btn btn-info">Yesterday</a>
+            <a href="{{current_url}}?chart_date=2" class="btn btn-info">2 Days ago</a>
+            <a href="{{current_url}}?chart_date=3" class="btn btn-info">3 Days ago</a>
+            <a href="{{current_url}}?chart_date=4" class="btn btn-info">4 Days ago</a>
+          </div>
+          <div id="packet-loss-chart-div" style="width: 100%; height: 400px;"></div>
+          <div id="ping-time-chart-div" style="width: 100%; height: 400px;"></div>
+
+        </div>
+    </div>
+    <div class="panel panel-info">
+        <div class="panel-heading"><h4>Ping Time and Packet loss summary<h4></div>
+        <div class="panel-body">
+            <table class="table table-hover table-advance">
+                <tr>
+                    <th>Period</th>
+                    <th>Min Time(ms)</th>
+                    <th>Max Time(ms)</th>
+                    <th>Avg Time(ms)</th>
+                    <th>Avg Packet Loss(%)</th>
+                </tr>
+
+                {% for period in 'last_record,last_hour,last_24_hours,last_7_days,last_30_days'|split:',' %}
+                {% with report_data|get_item:period as period_record %}
+                <tr>
+                    <th>{{period|title}}</th>
+                    <td>{{period_record.min_time|floatformat:3|default:'-'}}</td>
+                    <td>{{period_record.max_time|floatformat:3|default:'-'}}</td>
+                    <td>{{period_record.avg_time|floatformat:3|default:'-'}}</td>
+                    <td>{{period_record.packet_loss|floatformat:1|default:'-'}}%</td>
+                </tr>
+                {% endwith %}
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+{% endblock chart_section %}
+
+{% block extra_js %}
+{{block.super}}
+<script type="text/javascript" src="{{ STATIC_URL }}js/moment.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/bootstrap-datetimepicker.min.js"></script>
+<script src="{{ STATIC_URL }}js/amcharts/amcharts.js" type="text/javascript"></script>
+<script src="{{ STATIC_URL }}js/amcharts/serial.js" type="text/javascript"></script>
+<script src="{{ STATIC_URL }}js/charts.js" type="text/javascript"></script>
+<script type="text/javascript">
+$(document).ready(function () {
+  $('input[name=choose_chart_date]').datetimepicker({
+    format: 'YYYY-MM-DD',
+    showTodayButton: true
+  }).on('dp.change', function() {
+    var url = "{{current_url}}?chart_date=" + $(this).val();
+    window.location = url;
+  });
+
+  var chartData = {{chart_data|json}},
+      packetLossData = chartData.packet_loss,
+      pingTimeData = chartData.ping_time;
+  var chart1 = drawSerialChart("packet-loss-chart-div", {
+      "titles": [{
+        text: "Packet Loss Chart",
+        size: 20
+      }],
+      "dataProvider": packetLossData,
+      "valueAxes": [{
+          "title": "Packet Loss(%)"
+      }],
+      "graphs": [{
+          "valueField": "packet_loss",
+          "balloonText": "[[value]]%",
+          "title": "Packet Loss",
+          "balloon":{
+              "drop":true
+          }
+      }],
+  });
+
+  var chart2 = drawSerialChart("ping-time-chart-div", {
+      "titles": [{
+        text: "Ping Time Chart",
+        size: 20
+      }],
+      "dataProvider": pingTimeData,
+      "valueAxes": [{
+          "title": "Ping Time(millisecond)"
+      }],
+      "graphs": [{
+          "valueField": "min_time",
+          "balloonText": "[[value]] ms",
+          "title": "Min Time"
+      }, {
+          "valueField": "max_time",
+          "balloonText": "[[value]] ms",
+          "title": "Max Time"
+      }, {
+          "valueField": "avg_time",
+          "balloonText": "[[value]] ms",
+          "title": "Avg Time"
+      }, {
+          "valueField": "mdev_time",
+          "balloonText": "[[value]] ms",
+          "title": "Median Deviation",
+          "hidden": true
+      }]
+  });
+  // chart2.addListener("rendered", function(self) {
+  //   chart2.zoomToIndexes(Math.max(pingTimeData.length - 30, 0), pingTimeData.length);
+  // });
+
+});
+</script>
+
+{% endblock %}

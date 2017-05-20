@@ -1,0 +1,58 @@
+.rule-conds-table-actions-col {
+    width: 100px;
+}
+.alert-rule-list-table-actions-col {
+    width: 130px;
+}
+
+.event-list-table-actions-col {
+    width: 50px;
+}
+
+.device-list-table-actions-col {
+    width: 130px;
+}
+
+.device-features-table-actions-col {
+    width: 150px;
+}
+
+.threshold-list-table-actions-col {
+    width: 150px;
+}
+
+.feature-name {
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.severity_clear-label {
+    background-color: green !important;
+}
+.severity_debug-label {
+    background-color: violet !important;
+}
+.severity_info-label {
+    background-color: blue !important;
+}
+.severity_warning-label {
+    background-color: gold !important;
+}
+.severity_error-label {
+    background-color: orange !important;
+}
+.severity_critical-label {
+    background-color: red !important;
+}
+
+.minmax-th-operator {
+    width: 60px;
+}
+
+.bootstrap-tagsinput {
+    width: 100%;
+}
+
+.togglable-password {
+    cursor: pointer;
+}
