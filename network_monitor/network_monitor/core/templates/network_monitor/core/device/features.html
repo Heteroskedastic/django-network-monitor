@@ -24,7 +24,7 @@
             <span class="pull-right" title="Status">{{device|device_status_tag}}</span>
 
         </legend>
-        <div class="row">
+        <div class="row mar-bot10">
             <span class="col-md-4">
                 <label class="control-label">Mac Address: </label>
                 <span class="text-primary">{{device.mac|default:'-'}}{% if device.mac_manufacture %} <small class="text-muted"> {{ device.mac_manufacture }}</small> {% endif %}</span>
@@ -42,7 +42,21 @@
             {% endif %}
             </span>
         </div>
-        <span class="row">
+        <div class="row mar-bot10">
+            <span class="col-md-4">
+                <label class="control-label">Purchase Date: </label>
+                <span class="text-primary">{{device.purchase_date|default:'-'}}</span>
+            </span>
+            <span class="col-md-4">
+                <label class="control-label">Manufacture Date: </label>
+                <span class="text-primary">{{device.manufacture_date|default:'-'}}</span>
+            </span>
+            <span class="col-md-4">
+                <label class="control-label">Warranty Expiration: </label>
+                <span class="text-primary">{{device.warranty_expiration_date|default:'-'}}</span>
+            </span>
+        </div>
+        <div class="row mar-bot10">
             <span class="col-md-4">
                 <label class="control-label">Location: </label>
                 <span class="text-primary">{{device.location|default:'-'}}</span>
@@ -55,7 +69,7 @@
                 <label class="control-label">Tags: </label>
                 <span class="text-primary">{% tags_span device.tags cls='info' %}</span>
             </span>
-        </span>
+        </div>
     </div>
     <h4 class="page-title">Monitoring Features of "{{device}}"</h4>
 
