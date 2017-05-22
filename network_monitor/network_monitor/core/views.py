@@ -234,6 +234,17 @@ class DeviceDeleteView(PermissionRequiredMixin, SingleObjectMixin, View):
         return redirect(reverse('core:device-list'))
 
 
+class DevicePrintLabelView(PermissionRequiredMixin, SingleObjectMixin, View):
+    permission_required = 'core.view_device'
+    pk_url_kwarg = 'pk'
+    model = Device
+
+    def get(self, request, *args, **kwargs):
+        device = self.get_object()
+        ctx = {'device': device}
+        return render(request, "network_monitor/core/device/print-label.html", ctx)
+
+
 class DeviceFeaturesView(PermissionRequiredMixin, SingleObjectMixin, View):
     permission_required = 'core.view_devicefeature'
     pk_url_kwarg = 'pk'

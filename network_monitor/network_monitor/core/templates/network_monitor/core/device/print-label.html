@@ -1,0 +1,45 @@
+{% extends "network_monitor/core/base.html" %}
+{% load staticfiles %}
+{% load util_tags %}
+{% block extra_css %}
+<style>
+    body {
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+    }
+
+</style>
+{% endblock %}
+{% block container %}
+<div class="text-center">
+    <div class="row">
+        <div class="col-xs-10 text-right">
+            <h2 class="mar-top0">{{ device.name }}</h2>
+            <h5>{{ device.mac|default:'NO MAC' }}</h5>
+            <h5>{{ device.address }}</h5>
+            <h5>{{ device.manufacture_date|date:'n/Y'|default:'NO DATE' }}</h5>
+        </div>
+        <div class="col-xs-2 text-left" id="qrcode"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ STATIC_URL }}js/jquery.qrcode.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function () {
+    $('#qrcode').qrcode({
+        text: '{% ex_url 'core:device-features' device.pk %}',
+        render: 'canvas',
+        width: 110,
+        height: 110
+    });
+    {% if request.GET.print != 'false' %}
+    window.print();
+    {% endif %}
+});
+</script>
+{% endblock %}

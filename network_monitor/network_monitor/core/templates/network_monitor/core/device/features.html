@@ -14,7 +14,8 @@
 {% block content %}
     <div class="well">
         <legend class="pad-bot5">
-            <a class="btn btn-sm btn-default" title="Edit Device" href="{% url 'core:device-edit' device.pk %}"><span class="fa fa-pencil"></span></a>
+            <a target="_blank" class="btn btn-sm btn-danger" title="Print Label" href="{% url 'core:device-print-label' device.pk %}"><span class="fa fa-print"></span></a>
+            <a class="btn btn-sm btn-primary" title="Edit Device" href="{% url 'core:device-edit' device.pk %}"><span class="fa fa-pencil"></span></a>
             <span class="text-primary">{{device|title}}<small class="text-muted"> - <a href="{{ device.web_url }}" target="_blank">{{ device.address }}</a></small></span>
             {% if device.active %}
             <span class="label label-success">Enabled</span>
