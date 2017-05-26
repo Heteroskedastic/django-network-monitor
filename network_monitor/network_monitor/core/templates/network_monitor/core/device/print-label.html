@@ -19,10 +19,10 @@
 <div class="text-center device-print-label">
     <div class="device-qrcode" id="qrcode"></div>
     <div class="device-info">
-        <h1 class="mar-top0 device-name">{{ device.name }}</h1>
-        <h4 class="device-mac">{{ device.mac|default:'NO MAC' }}</h4>
-        <h4 class="device-ip">{{ device.address }}</h4>
-        <h4 class="device-manufacture-date">{{ device.manufacture_date|date:'n/Y'|default:'NO DATE' }}</h4>
+        <h1 class="mar-top0 mar-bot0 device-name">{{ device.name }}</h1>
+        <h4 class="mar-top0 mar-bot0 device-mac">{{ device.mac|default:'NO MAC' }}</h4>
+        <h4 class="mar-bot0 device-ip">{{ device.address }}</h4>
+        <h4 class="mar-bot0 device-manufacture-date">{{ device.manufacture_date|date:'n/Y'|default:'NO DATE' }}</h4>
     </div>
 </div>
 {% endblock %}
