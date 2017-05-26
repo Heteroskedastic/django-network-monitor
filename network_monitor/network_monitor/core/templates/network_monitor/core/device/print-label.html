@@ -3,40 +3,44 @@
 {% load util_tags %}
 {% block extra_css %}
 <style>
+@media print {
+
     body {
         margin-top: 0 !important;
         margin-bottom: 0 !important;
         padding-top: 0 !important;
         padding-bottom: 0 !important;
     }
+}
 
 </style>
 {% endblock %}
 {% block container %}
 <div class="text-center device-print-label">
-    <div class="row">
-        <div class="col-xs-10 text-right">
-            <h1 class="mar-top0 device-name">{{ device.name }}</h1>
-            <h4 class="device-mac">{{ device.mac|default:'NO MAC' }}</h4>
-            <h4 class="device-ip">{{ device.address }}</h4>
-            <h4 class="device-manufacture-date">{{ device.manufacture_date|date:'n/Y'|default:'NO DATE' }}</h4>
-        </div>
-        <div class="col-xs-2 text-left" id="qrcode"></div>
+    <div class="device-qrcode" id="qrcode"></div>
+    <div class="device-info">
+        <h1 class="mar-top0 device-name">{{ device.name }}</h1>
+        <h4 class="device-mac">{{ device.mac|default:'NO MAC' }}</h4>
+        <h4 class="device-ip">{{ device.address }}</h4>
+        <h4 class="device-manufacture-date">{{ device.manufacture_date|date:'n/Y'|default:'NO DATE' }}</h4>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ STATIC_URL }}js/jquery.qrcode.min.js"></script>
+<script src="{{ STATIC_URL }}js/qrcode.min.js"></script>
 
 <script type="text/javascript">
 $(document).ready(function () {
-    $('#qrcode').qrcode({
+    var qrcode = new QRCode(document.getElementById("qrcode"), {
         text: '{% ex_url 'core:device-features' device.pk %}',
-        render: 'canvas',
-        width: 220,
-        height: 220
+        width: 170,
+        height: 170,
+        colorDark : "#000000",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
     });
+
     {% if request.GET.print != 'false' %}
     window.print();
     {% endif %}
