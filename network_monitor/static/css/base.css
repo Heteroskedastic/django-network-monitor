@@ -321,16 +321,16 @@ footer .container .text-muted {
 }
 
 .device-print-label .device-name {
-  font-size: 37px;
+  font-size: 34px;
 }
 
 .device-print-label .device-mac, .device-print-label .device-ip, .device-print-label .device-manufacture-date {
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .device-print-label .device-qrcode {
-  width: 170px;
-  height: 170px;
+  width: 130px;
+  height: 130px;
   float: right;
   margin-right: 5px;
   margin-left: 10px;

@@ -34,8 +34,8 @@
 $(document).ready(function () {
     var qrcode = new QRCode(document.getElementById("qrcode"), {
         text: '{% ex_url 'core:device-features' device.pk %}',
-        width: 170,
-        height: 170,
+        width: 130,
+        height: 130,
         colorDark : "#000000",
         colorLight : "#ffffff",
         correctLevel : QRCode.CorrectLevel.H
