@@ -13,13 +13,13 @@
 </style>
 {% endblock %}
 {% block container %}
-<div class="text-center">
+<div class="text-center device-print-label">
     <div class="row">
         <div class="col-xs-10 text-right">
-            <h2 class="mar-top0">{{ device.name }}</h2>
-            <h5>{{ device.mac|default:'NO MAC' }}</h5>
-            <h5>{{ device.address }}</h5>
-            <h5>{{ device.manufacture_date|date:'n/Y'|default:'NO DATE' }}</h5>
+            <h1 class="mar-top0 device-name">{{ device.name }}</h1>
+            <h4 class="device-mac">{{ device.mac|default:'NO MAC' }}</h4>
+            <h4 class="device-ip">{{ device.address }}</h4>
+            <h4 class="device-manufacture-date">{{ device.manufacture_date|date:'n/Y'|default:'NO DATE' }}</h4>
         </div>
         <div class="col-xs-2 text-left" id="qrcode"></div>
     </div>
@@ -34,8 +34,8 @@ $(document).ready(function () {
     $('#qrcode').qrcode({
         text: '{% ex_url 'core:device-features' device.pk %}',
         render: 'canvas',
-        width: 110,
-        height: 110
+        width: 220,
+        height: 220
     });
     {% if request.GET.print != 'false' %}
     window.print();

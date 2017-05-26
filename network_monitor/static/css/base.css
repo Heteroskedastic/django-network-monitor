@@ -319,3 +319,11 @@ footer .container .text-muted {
 .table-sorting i {
 
 }
+
+.device-print-label .device-name {
+  font-size: 45px;
+}
+
+.device-print-label .device-mac, .device-print-label .device-ip, .device-print-label .device-manufacture-date {
+  font-size: 27px;
+}
