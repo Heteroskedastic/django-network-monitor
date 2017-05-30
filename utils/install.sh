@@ -17,6 +17,7 @@ sudo apt-get install git -y
 sudo apt-get install supervisor -y
 sudo apt-get install libjpeg-dev zlib1g-dev -y
 sudo apt-get install libxml2-dev libxslt-dev -y
+sudo apt-get install nmap -y
 sudo pip install virtualenv
 
 # setup project

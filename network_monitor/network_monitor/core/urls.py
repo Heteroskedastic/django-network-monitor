@@ -1,15 +1,18 @@
 from django.conf.urls import url
+from django.conf import settings
 
+from network_monitor.helpers.utils import NotFoundView
 from .views import IndexView, RegisterView, LoginView, LogoutView, \
     ProfileView, ChangePasswordView, DeviceListView, DeviceAddView, \
-    DeviceEditView, DeviceDeleteView, DeviceFeaturesView, EventListView,\
+    DeviceEditView, DeviceDeleteView, DeviceFeaturesView, EventListView, \
     EventDeleteView, UserAlertRuleListView, UserAlertRuleAddView, \
     UserAlertRuleEditView, UserAlertRuleDeleteView, DeviceSwitchActiveView, UserAlertRuleSwitchActiveView, \
-    DevicesStatusAjaxView, DevicePrintLabelView
+    DevicesStatusAjaxView, DevicePrintLabelView, DiscoverDeviceView
 
 urlpatterns = [
     url(r'^$', IndexView.as_view(), name='index'),
-    url(r'^register/$', RegisterView.as_view(), name="register"),
+    url(r'^register/$', (RegisterView if settings.ENABLE_REGISTER_USER_VIEW else NotFoundView).as_view(),
+        name="register"),
     url(r'^login/$', LoginView.as_view(), name="login"),
     url(r'^logout/$', LogoutView.as_view(), name="logout"),
     url(r'^profile/$', ProfileView.as_view(), name="profile"),
@@ -18,6 +21,7 @@ urlpatterns = [
     url(r'^event/delete/(?P<pk>\d+)/$', EventDeleteView.as_view(), name="event-delete"),
     url(r'^device/list/$', DeviceListView.as_view(), name="device-list"),
     url(r'^device/add/$', DeviceAddView.as_view(), name="device-add"),
+    url(r'^device/discover/$', DiscoverDeviceView.as_view(), name="device-discover"),
     url(r'^device/edit/(?P<pk>\d+)/$', DeviceEditView.as_view(), name="device-edit"),
     url(r'^device/switch-active/(?P<pk>\d+)/$', DeviceSwitchActiveView.as_view(), name="device-switch-active"),
     url(r'^device/delete/(?P<pk>\d+)/$', DeviceDeleteView.as_view(), name="device-delete"),

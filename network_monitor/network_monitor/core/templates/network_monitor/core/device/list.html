@@ -12,7 +12,11 @@
 {% endblock %}
 
 {% block content %}
-    <a href="{% url 'core:device-add' %}" class="btn btn-success pull-right"><span class="fa fa-plus"></span> New Device</a><h3 class="page-title">Device List</h3>
+    <div class="pull-right">
+        <a href="{% url 'core:device-discover' %}" class="btn btn-success"><span class="fa fa-binoculars"></span> Discover Device</a>
+        <a href="{% url 'core:device-add' %}" class="btn btn-success"><span class="fa fa-plus"></span> New Device</a>
+    </div>
+    <h3 class="page-title">Device List</h3>
     <div id="filters" class="filters">
         <h5 class="subtitle">Filters</h5>
         <form id="filterForm" class="form-inline" role="form" action="">

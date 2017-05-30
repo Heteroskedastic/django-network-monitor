@@ -1,6 +1,8 @@
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
 from django.contrib.auth import password_validation
+from django.core.exceptions import ValidationError
+from django.core.validators import ip_address_validators
 from django.forms.widgets import PasswordInput, TextInput, CheckboxInput
 from django import forms
 from ckeditor.widgets import CKEditorWidget
@@ -102,6 +104,31 @@ class DeviceForm(forms.ModelForm):
         labels = {
             'active': ''
         }
+
+
+class DiscoverDeviceForm(forms.Form):
+    ip_range = forms.CharField(
+        max_length=100, required=True,
+        help_text='Valid format examples: 192.168.1.1-100 or 192.168.1.0/24 or 192.168.1.1',
+        widget=TextInput(attrs={'class': 'form-control', 'required': True,
+                                'placeholder': 'Enter Ip range (xxx.xxx.xxx.xxx/xx or xxx.xxx.xxx.xxx-xxx)'}))
+
+    def clean_ip_range(self):
+        ip_range = self.cleaned_data['ip_range']
+        ip_validator = ip_address_validators('both', False)[0][0]
+        if '/' in ip_range:
+            ip, r = ip_range.split('/', 1)
+            ip_validator(ip)
+            if not r.isdigit() or int(r) < 1 or int(r) > 32:
+                raise ValidationError('Invalid ip range. {} should be between 1 and 32'.format(r))
+        elif '-' in ip_range:
+            ip, r = ip_range.split('-', 1)
+            ip_validator(ip)
+            if not r.isdigit() or int(r) < 0 or int(r) > 255:
+                raise ValidationError('Invalid ip range. {} should be between 0 and 255'.format(r))
+        else:
+            ip_validator(ip_range)
+        return ip_range
 
 
 class DeviceFeatureForm(forms.ModelForm):

@@ -254,3 +254,19 @@ def add_date(date, **kwargs):
     if args:
         date = date + timedelta(**args)
     return date
+
+
+@register.filter
+def device_discover_status_tag(status):
+    status_map = {
+        'new': ('New', 'success'),
+        'existing': ('Existing', 'default'),
+        'conflict': ('Mismatch Mac', 'warning'),
+    }
+    label, cls = status_map.get(status, (status.capitalize(), 'default'))
+    if status == 'new':
+        label = '<span class="fa fa-star"></span> {}'.format(label)
+    html = '<span class="label label-{}">{}</span>'.format(cls, label)
+    return mark_safe(html)
+
+

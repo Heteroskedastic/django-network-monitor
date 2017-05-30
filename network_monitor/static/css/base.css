@@ -339,3 +339,7 @@ footer .container .text-muted {
 .device-print-label .device-info {
   text-align: right;
 }
+
+.popover-content .form-group {
+  margin-bottom: 5px;
+}

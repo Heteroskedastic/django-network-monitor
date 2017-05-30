@@ -317,6 +317,7 @@ HOSTNAME = 'localhost'
 DEFAULT_EMAIL_FROM = 'info@networkmonitor.io'
 
 MON_SERVICE_INTERVAL = 20
+ENABLE_REGISTER_USER_VIEW = False
 
 # RedisMem settings
 REDIS_MEM_HOST = 'localhost'

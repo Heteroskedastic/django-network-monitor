@@ -1,5 +1,8 @@
 import json
 from django.contrib.humanize.templatetags.humanize import naturaltime
+from django.core.exceptions import ValidationError
+from django.core.validators import ip_address_validators
+from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
@@ -15,11 +18,10 @@ from django.contrib.auth.views import password_change
 from django.views.generic.edit import CreateView
 from django.views.generic.detail import SingleObjectMixin
 
-from network_monitor.monit_manager.threshold import Manager
 from network_monitor.helpers.utils import send_form_errors, success_message, \
-    PermissionRequiredMixin, get_current_page_size
+    PermissionRequiredMixin, get_current_page_size, scan_network_ips, find_mac_manufacture, to_dict
 from .forms import RegistrationForm, LoginForm, ProfileForm, DeviceForm, \
-    DeviceFeatureForm, ThresholdForm, UserAlertRuleForm
+    DeviceFeatureForm, ThresholdForm, UserAlertRuleForm, DiscoverDeviceForm
 from .filters import DevicesFilter, EventsFilter
 from .models import Device, DeviceFeature, Threshold, Event, UserAlertRule, \
     SEVERITY_CHOICES
@@ -36,25 +38,23 @@ class IndexView(PermissionRequiredMixin, View):
 class RegisterView(View):
 
     def get(self, request, *args, **kwargs):
-        return redirect('core:index')
-        # form = RegistrationForm()
-        # ctx = {"form": form}
-        # return render(request, "network_monitor/core/register.html", ctx)
+        form = RegistrationForm()
+        ctx = {"form": form}
+        return render(request, "network_monitor/core/register.html", ctx)
 
     def post(self, request, *args, **kwargs):
-        return redirect('core:index')
-        # form = RegistrationForm(request.POST)
-        # password = request.POST.get('password')
-        # if form.is_valid():
-        #     user = form.save(commit=False)
-        #     user.set_password(password)
-        #     user.save()
-        #     success_message('User registered successfully', request)
-        #     return redirect(self.get_success_url())
-        # else:
-        #     send_form_errors(form, request)
-        # ctx = {"form": form}
-        # return render(request, "network_monitor/core/register.html", ctx)
+        form = RegistrationForm(request.POST)
+        password = request.POST.get('password')
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.set_password(password)
+            user.save()
+            success_message('User registered successfully', request)
+            return redirect(self.get_success_url())
+        else:
+            send_form_errors(form, request)
+        ctx = {"form": form}
+        return render(request, "network_monitor/core/register.html", ctx)
 
     def get_success_url(self):
         return settings.LOGIN_URL
@@ -158,17 +158,73 @@ class DeviceAddView(PermissionRequiredMixin, CreateView):
                 form.fields.pop(sf, None)
         return form
 
+    def form_invalid(self, form):
+        if self.request.is_ajax:
+            return JsonResponse({'message': 'Invalid parameters', 'errors': form.errors}, status=400)
+        return super(DeviceAddView, self).form_invalid(form)
+
     def form_valid(self, form):
         self.object = form.save(commit=False)
         if self.object.mac:
             self.object.mac_manufacture = self.object.fetch_mac_manufacture()
         self.object.save()
-        success_message('Device "{}" created successfully.'.format(
-                        self.object), self.request)
+        if self.request.is_ajax:
+            return JsonResponse(to_dict(self.object, fields=['id', 'name', 'address', 'mac']))
+
+        success_message('Device "{}" created successfully.'.format(self.object), self.request)
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return reverse('core:device-list')
+
+
+class DiscoverDeviceView(PermissionRequiredMixin, View):
+    template_name = "network_monitor/core/device/discover.html"
+
+    def get_form(self):
+        data = None
+        if self.request.method == 'POST':
+            data = self.request.POST
+        return DiscoverDeviceForm(data=data)
+
+    def get(self, request, *args, **kwargs):
+        ctx = {'form': self.get_form()}
+        return render(request, self.template_name, ctx)
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        discovered_devices = []
+        ip_range = None
+        if form.is_valid():
+            ip_range = form.cleaned_data['ip_range']
+            scan = scan_network_ips(ip_range)
+            for ip, data in scan.items():
+                mac = data.get('vendor', {}).get('mac')
+                hostnames = [d.get('name') for d in data.get('hostnames', []) if d.get('name') ]
+                status = 'new'
+                manufacture = None
+                if mac:
+                    device = Device.objects.filter(Q(address=ip)|Q(mac=mac)).first()
+                else:
+                    device = Device.objects.filter(address=ip).first()
+                if device:
+                    if mac and (device.mac != mac):
+                        status = 'conflict'
+                    else:
+                        status = 'existing'
+                        manufacture = device.mac_manufacture or device.fetch_mac_manufacture()
+                if mac and not manufacture:
+                    manufacture = find_mac_manufacture(mac)
+                discovered_devices.append(
+                    {'ip': ip, 'mac': mac, 'manufacture': manufacture, 'hostnames': hostnames, 'status': status,
+                     'obj': device})
+        else:
+            send_form_errors(form, request)
+
+        status_orders = {'new': 1, 'conflict': 2, 'existing': 3}
+        discovered_devices.sort(key=lambda d: (status_orders.get(d['status'], 0), d['ip']))
+        ctx = {'discovered_devices': discovered_devices, 'ip_range': ip_range, 'form': form}
+        return render(request, self.template_name, ctx)
 
 
 class DeviceEditView(PermissionRequiredMixin, UpdateView):

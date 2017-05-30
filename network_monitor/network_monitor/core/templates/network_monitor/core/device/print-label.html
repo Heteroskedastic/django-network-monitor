@@ -43,6 +43,7 @@ $(document).ready(function () {
 
     {% if request.GET.print != 'false' %}
     window.print();
+    //setTimeout(window.close, 0);
     {% endif %}
 });
 </script>

@@ -1,15 +1,19 @@
 import re
+import nmap
+import arpreq
 import random
 import string
 import decimal
 import datetime
 import subprocess
+
+import requests
 from django.utils.translation import ugettext_lazy as _
 from django.forms import fields
 from django.db import models
 from django.contrib import messages
 from django.shortcuts import render
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
 from django.utils import six
 from django.core.urlresolvers import reverse
 from django.utils.safestring import mark_safe
@@ -135,6 +139,16 @@ def ex_reverse(viewname, **kwargs):
     scheme = '{}://'.format(scheme) if scheme else ''
 
     return '{0}{1}{2}'.format(scheme, host, rel_path)
+
+
+class NotFoundView(object):
+    @classmethod
+    def as_view(cls):
+        return cls.handler
+
+    @classmethod
+    def handler(cls, request):
+        raise Http404
 
 
 class PermissionRequiredMixin(DjangoPermissionRequiredMixin):
@@ -299,3 +313,29 @@ if six.PY2:
             raise subprocess.CalledProcessError(retcode, process.args,
                                      output=stdout, stderr=stderr)
         return CompletedProcess(popenargs, retcode, stdout, stderr)
+
+
+def scan_network_ips(ip_range):
+    nm = nmap.PortScanner()
+    scans = nm.scan(hosts=ip_range, arguments='-sn')
+    res = {}
+    for ip, data in scans.get('scan', {}).items():
+        mac = arpreq.arpreq(ip)
+        data.setdefault('vendor', {}).setdefault('mac', mac)
+        res[ip] = data
+    return res
+
+
+def find_mac_manufacture(mac, abort=False):
+    url = '{}/{}'.format(settings.MACVENDORS_API_URL.rstrip('/'), mac)
+    try:
+        res = requests.get(url, timeout=settings.MACVENDORS_API_TIMEOUT)
+    except Exception:
+        res = None
+
+    if not res or not res.ok:
+        if abort:
+            msg = 'Not Found' if res else 'Timeout Error'
+            raise Exception(msg)
+        return None
+    return res.text

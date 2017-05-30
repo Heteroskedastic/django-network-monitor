@@ -205,3 +205,5 @@ if config.has_option('cfg', 'MACVENDORS_API_URL'):
     MACVENDORS_API_URL = config.get('cfg', 'MACVENDORS_API_URL')
 if config.has_option('cfg', 'MACVENDORS_API_TIMEOUT'):
     MACVENDORS_API_TIMEOUT = config.getint('cfg', 'MACVENDORS_API_TIMEOUT')
+if config.has_option('cfg', 'ENABLE_REGISTER_USER_VIEW'):
+    ENABLE_REGISTER_USER_VIEW = config.getboolean('cfg', 'ENABLE_REGISTER_USER_VIEW')

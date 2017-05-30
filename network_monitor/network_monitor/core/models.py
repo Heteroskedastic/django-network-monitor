@@ -16,7 +16,7 @@ from django.core.validators import MinValueValidator
 from phonenumber_field.modelfields import PhoneNumberField
 
 from network_monitor.helpers.shortcuts import get_installed_features
-from network_monitor.helpers.utils import SafeFormat, MACAddressField
+from network_monitor.helpers.utils import SafeFormat, MACAddressField, find_mac_manufacture
 
 SEVERITY_CLEAR = 0
 SEVERITY_DEBUG = 1
@@ -58,8 +58,7 @@ class Device(models.Model):
     manufacture_date = models.DateField(null=True, blank=True)
     warranty_expiration_date = models.DateField(null=True, blank=True)
     note = models.TextField("Note", null=True, blank=True)
-    status = models.CharField('Status', max_length=16,
-                              choices=STATUS_CHOICES, default=STATUS_DOWN)
+    status = models.CharField('Status', max_length=16, choices=STATUS_CHOICES, default=STATUS_DOWN)
     tags = models.CharField('Tags', max_length=1024, blank=True, null=True, default=None)
     last_seen = models.DateTimeField("Last Seen", null=True)
     active = models.BooleanField("Active", default=True)
@@ -83,18 +82,7 @@ class Device(models.Model):
     def fetch_mac_manufacture(self, abort=False):
         if not self.mac:
             return
-        url = '{}/{}'.format(settings.MACVENDORS_API_URL.rstrip('/'), self.mac)
-        try:
-            res = requests.get(url, timeout=settings.MACVENDORS_API_TIMEOUT)
-        except Exception:
-            res = None
-
-        if not res or not res.ok:
-            if abort:
-                msg = 'Not Found' if res else 'Timeout Error'
-                raise Exception(msg)
-            return None
-        return res.text
+        return find_mac_manufacture(self.mac, abort=abort)
 
     class Meta:
         permissions = (

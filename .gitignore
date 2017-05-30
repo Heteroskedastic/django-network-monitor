@@ -94,3 +94,4 @@ env2/
 
 # special files
 network_monitor/network_monitor/settings/custom_config_prod.ini
+collected_static/
