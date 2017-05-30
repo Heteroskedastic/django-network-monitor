@@ -17,9 +17,9 @@
 {% endblock %}
 {% block container %}
 <div class="text-center device-print-label">
+    <h1 class="mar-top0 mar-bot0 device-name text-left">{{ device.name }}</h1>
     <div class="device-qrcode" id="qrcode"></div>
     <div class="device-info">
-        <h1 class="mar-top0 mar-bot0 device-name">{{ device.name }}</h1>
         <h4 class="mar-top0 mar-bot0 device-mac">{{ device.mac|default:'NO MAC' }}</h4>
         <h4 class="mar-bot0 device-ip">{{ device.address }}</h4>
         <h4 class="mar-bot0 device-manufacture-date">{{ device.manufacture_date|date:'n/Y'|default:'NO DATE' }}</h4>
@@ -34,8 +34,8 @@
 $(document).ready(function () {
     var qrcode = new QRCode(document.getElementById("qrcode"), {
         text: '{% ex_url 'core:device-features' device.pk %}',
-        width: 120,
-        height: 120,
+        width: 100,
+        height: 100,
         colorDark : "#000000",
         colorLight : "#ffffff",
         correctLevel : QRCode.CorrectLevel.H

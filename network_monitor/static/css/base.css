@@ -321,23 +321,23 @@ footer .container .text-muted {
 }
 
 .device-print-label .device-name {
-  font-size: 30px;
+  font-size: 23px;
 }
 
 .device-print-label .device-mac, .device-print-label .device-ip, .device-print-label .device-manufacture-date {
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .device-print-label .device-qrcode {
-  width: 120px;
-  height: 120px;
+  width: 100px;
+  height: 100px;
   float: right;
   margin-right: 2px;
   margin-left: 5px;
 }
 
 .device-print-label .device-info {
-  text-align: right;
+  text-align: left;
 }
 
 .popover-content .form-group {
