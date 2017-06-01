@@ -13,10 +13,19 @@
 
 <form id="discoverDeviceForm" method="post">
     {% csrf_token %}
+    {% if last_scan.processing %}
+    {% bootstrap_field form.ip_range bound_css_class='' addon_after_class='input-group-btn' addon_after='<button type="submit" id="searchButton" class="btn btn-success" data-loading-text="<span class=\'fa fa-refresh fa-spin\'></span> Discovering..."><span class="fa fa-search"></span> Discover</button><button type="button" id="stopButton" class="btn btn-danger" title="Stop" data-loading-text="<span class=\'fa fa-refresh fa-spin\'></span>"><span class="fa fa-stop"></span></button>' %}
+    {% else %}
     {% bootstrap_field form.ip_range bound_css_class='' addon_after_class='input-group-btn' addon_after='<button type="submit" id="searchButton" class="btn btn-success" data-loading-text="<span class=\'fa fa-refresh fa-spin\'></span> Discovering..."><span class="fa fa-search"></span> Discover</button>' %}
+    {% endif %}
 </form>
-{% if discovered_devices %}
-<div class="text-info"> Last Search records for: <strong>{{ ip_range }}</strong></div>
+{% if last_scan.processing %}
+<div class="text-info"> Scanning for: <strong>{{ last_scan.ip_range }}</strong> ...</div>
+{% elif last_scan.success == False %}
+<div class="text-danger"> Failed <strong>{{ last_scan.ip_range }}</strong> scan! </div>
+<div class="text-danger"> {{ last_scan.errors|join:','|default:'UNKNWON ERROR!' }} </div>
+{% elif last_scan.success == True %}
+<div class="text-success"> Last search records for: <strong>{{ last_scan.ip_range }}</strong></div>
 {% endif %}
 <div class="panel panel-default">
     <table class="table table-striped table-hover table-advance">
@@ -29,7 +38,7 @@
             </tr>
         </thead>
         <tbody>
-        {% for device in discovered_devices %}
+        {% for device in last_scan.discovered_devices %}
             <tr data-row-id="{{ forloop.counter }}">
                 <td data-name="ip">
                 {% if device.obj %}
@@ -57,7 +66,17 @@
                 </td>
             </tr>
         {% empty %}
-            <tr><td class="text-center text-muted" colspan="4"> <em><h4>[NO RECORD!]</h4></em></td></tr>
+            <tr>
+                <td class="text-center text-muted" colspan="4">
+                    <em><h4>
+                    {% if last_scan.processing %}
+                        [Scanning...]
+                    {% else %}
+                        [NO RECORD!]
+                    {% endif %}
+                    </h4></em>
+                </td>
+            </tr>
         {% endfor %}
         </tbody>
     </table>
@@ -87,6 +106,20 @@
 <script type="text/javascript" src="{{ STATIC_URL }}js/utils.js"></script>
 <script type="text/javascript">
 $(document).ready(function () {
+    var checkIntervalId;
+    function checkLastScanResult() {
+        $.get("{% url 'core:device-discover' %}?exclude_devices=true", function(data) {
+            if (!data.processing) {
+                clearInterval(checkIntervalId);
+                location.reload();
+            }
+        });
+    }
+    {% if last_scan.processing %}
+    $('#searchButton').button('loading');
+    $('#id_ip_range').prop('disabled', true);
+    checkIntervalId = setInterval(checkLastScanResult, 5000);
+    {% endif %}
     $('#discoverDeviceForm').on('submit', function () {
         $('#searchButton').button('loading');
     });
@@ -102,6 +135,12 @@ $(document).ready(function () {
             html = html.replace('$$name$$', ip).replace('$$ip$$', ip).replace('$$mac$$', mac).replace('$$manufacture$$', manufacture).replace('$$row_ref$$', row_id);
             return html;
         }
+    });
+    $('#stopButton').on('click', function() {
+        var csrftoken = $("[name=csrfmiddlewaretoken]").val();
+        $.post("{% url 'core:device-discover-stop' %}", {'csrfmiddlewaretoken': csrftoken}, function() {
+            location.reload();
+        });
     });
     $(document).on('submit', 'form[name=quick-add-form]', function (e) {
         e.preventDefault();

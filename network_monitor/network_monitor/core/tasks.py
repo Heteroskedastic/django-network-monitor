@@ -5,6 +5,7 @@ try:
     from network_monitor.helpers.utils import py2_subprocess_run as subprocess_run
 except ImportError:
     from subprocess import run as subprocess_run
+from network_monitor.helpers.utils import scan_network_ips
 from bs4 import BeautifulSoup
 from celery.decorators import periodic_task
 from datetime import timedelta
@@ -158,3 +159,17 @@ def feature_mon_handle(df_id):
         logger.info('++++++++++++++ Finished Checking for ID #%s...', df_id)
         redis_mem = get_redis_mem('feature_mon_handle')
         redis_mem.delete(str(df_id))
+
+
+@celery_app.task(ignore_result=True, soft_time_limit=settings.REDIS_MEM_DEFAULT_EXPIRE)
+def nmap_scan_network(user_id, ip_range):
+    logger.info('++++++++++++++ Start Scanning network [%s] by [%s] ...', ip_range, user_id)
+    redis_mem = get_redis_mem('nmap_scan_network')
+    try:
+        scan = scan_network_ips(ip_range)
+        redis_mem.set(str(user_id), {'ip_range': ip_range, 'success': True, 'result': scan})
+    except Exception as e:
+        redis_mem.set(str(user_id), {'ip_range': ip_range, 'success': False, 'errors': e.args})
+        logger.exception('UnExpected Exception')
+    finally:
+        logger.info('++++++++++++++ Finished Scanning network [%s] by [%s] ...', ip_range, user_id)

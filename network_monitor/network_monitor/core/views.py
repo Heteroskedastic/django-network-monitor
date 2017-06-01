@@ -1,7 +1,5 @@
 import json
 from django.contrib.humanize.templatetags.humanize import naturaltime
-from django.core.exceptions import ValidationError
-from django.core.validators import ip_address_validators
 from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.http import JsonResponse
@@ -18,8 +16,11 @@ from django.contrib.auth.views import password_change
 from django.views.generic.edit import CreateView
 from django.views.generic.detail import SingleObjectMixin
 
+from network_monitor.celery import app
+from network_monitor.helpers.shortcuts import get_redis_mem
+from network_monitor.core.tasks import nmap_scan_network
 from network_monitor.helpers.utils import send_form_errors, success_message, \
-    PermissionRequiredMixin, get_current_page_size, scan_network_ips, find_mac_manufacture, to_dict
+    PermissionRequiredMixin, get_current_page_size, scan_network_ips, find_mac_manufacture, to_dict, warning_message
 from .forms import RegistrationForm, LoginForm, ProfileForm, DeviceForm, \
     DeviceFeatureForm, ThresholdForm, UserAlertRuleForm, DiscoverDeviceForm
 from .filters import DevicesFilter, EventsFilter
@@ -159,7 +160,7 @@ class DeviceAddView(PermissionRequiredMixin, CreateView):
         return form
 
     def form_invalid(self, form):
-        if self.request.is_ajax:
+        if self.request.is_ajax():
             return JsonResponse({'message': 'Invalid parameters', 'errors': form.errors}, status=400)
         return super(DeviceAddView, self).form_invalid(form)
 
@@ -168,7 +169,7 @@ class DeviceAddView(PermissionRequiredMixin, CreateView):
         if self.object.mac:
             self.object.mac_manufacture = self.object.fetch_mac_manufacture()
         self.object.save()
-        if self.request.is_ajax:
+        if self.request.is_ajax():
             return JsonResponse(to_dict(self.object, fields=['id', 'name', 'address', 'mac']))
 
         success_message('Device "{}" created successfully.'.format(self.object), self.request)
@@ -179,6 +180,7 @@ class DeviceAddView(PermissionRequiredMixin, CreateView):
 
 
 class DiscoverDeviceView(PermissionRequiredMixin, View):
+    permission_required = 'core.add_device'
     template_name = "network_monitor/core/device/discover.html"
 
     def get_form(self):
@@ -187,44 +189,89 @@ class DiscoverDeviceView(PermissionRequiredMixin, View):
             data = self.request.POST
         return DiscoverDeviceForm(data=data)
 
+    @staticmethod
+    def _get_discovered_devices(scan):
+        discovered_devices = []
+        for ip, data in scan.items():
+            mac = data.get('vendor', {}).get('mac')
+            hostnames = [d.get('name') for d in data.get('hostnames', []) if d.get('name') ]
+            status = 'new'
+            manufacture = None
+            if mac:
+                device = Device.objects.filter(Q(address=ip)|Q(mac=mac)).first()
+            else:
+                device = Device.objects.filter(address=ip).first()
+            if device:
+                if mac and (device.mac != mac):
+                    status = 'conflict'
+                else:
+                    status = 'existing'
+                    manufacture = device.mac_manufacture or device.fetch_mac_manufacture()
+            if mac and not manufacture:
+                manufacture = find_mac_manufacture(mac)
+            discovered_devices.append(
+                {'ip': ip, 'mac': mac, 'manufacture': manufacture, 'hostnames': hostnames, 'status': status,
+                 'obj': device})
+        status_orders = {'new': 1, 'conflict': 2, 'existing': 3}
+        discovered_devices.sort(key=lambda d: (status_orders.get(d['status'], 0), d['ip']))
+        return discovered_devices
+
+    def get_last_scan(self):
+        redis_mem = get_redis_mem('nmap_scan_network')
+        last_scan = redis_mem.get(str(self.request.user.id)) or {}
+        scan_result = last_scan.pop('result', {})
+        last_scan['discovered_devices'] = self._get_discovered_devices(scan_result)
+        return last_scan
+
+    def get_context_data(self, **kwargs):
+        kwargs.update({'last_scan': self.get_last_scan()})
+        return kwargs
+
     def get(self, request, *args, **kwargs):
-        ctx = {'form': self.get_form()}
+        if request.is_ajax():
+            last_scan = self.get_last_scan()
+            if request.GET.get('exclude_devices'):
+                last_scan.pop('discovered_devices', None)
+            return JsonResponse(last_scan)
+        ctx = self.get_context_data(form=self.get_form())
         return render(request, self.template_name, ctx)
 
     def post(self, request, *args, **kwargs):
+        user_id = request.user.id
+        redis_mem = get_redis_mem('nmap_scan_network')
+        last_scan = redis_mem.get(str(user_id)) or {}
+        if last_scan.get('processing'):
+            warning_message('Network is already under scanning!', request)
+            return redirect('core:device-discover')
+        if last_scan:
+            redis_mem.delete(str())
+
         form = self.get_form()
-        discovered_devices = []
-        ip_range = None
         if form.is_valid():
             ip_range = form.cleaned_data['ip_range']
-            scan = scan_network_ips(ip_range)
-            for ip, data in scan.items():
-                mac = data.get('vendor', {}).get('mac')
-                hostnames = [d.get('name') for d in data.get('hostnames', []) if d.get('name') ]
-                status = 'new'
-                manufacture = None
-                if mac:
-                    device = Device.objects.filter(Q(address=ip)|Q(mac=mac)).first()
-                else:
-                    device = Device.objects.filter(address=ip).first()
-                if device:
-                    if mac and (device.mac != mac):
-                        status = 'conflict'
-                    else:
-                        status = 'existing'
-                        manufacture = device.mac_manufacture or device.fetch_mac_manufacture()
-                if mac and not manufacture:
-                    manufacture = find_mac_manufacture(mac)
-                discovered_devices.append(
-                    {'ip': ip, 'mac': mac, 'manufacture': manufacture, 'hostnames': hostnames, 'status': status,
-                     'obj': device})
+            task = nmap_scan_network.delay(user_id, ip_range)
+            redis_mem.set(str(user_id), {'ip_range': ip_range, 'processing': True, 'task_id': task.task_id},
+                          expire=settings.REDIS_MEM_DEFAULT_EXPIRE)
+            return redirect('core:device-discover')
         else:
             send_form_errors(form, request)
+            ctx = self.get_context_data(form=form)
+            return render(request, self.template_name, ctx)
 
-        status_orders = {'new': 1, 'conflict': 2, 'existing': 3}
-        discovered_devices.sort(key=lambda d: (status_orders.get(d['status'], 0), d['ip']))
-        ctx = {'discovered_devices': discovered_devices, 'ip_range': ip_range, 'form': form}
-        return render(request, self.template_name, ctx)
+
+class StopDiscoverDeviceView(PermissionRequiredMixin, View):
+    permission_required = 'core.add_device'
+
+    def post(self, request, *args, **kwargs):
+        user_id = request.user.id
+        redis_mem = get_redis_mem('nmap_scan_network')
+        last_scan = redis_mem.get(str(user_id)) or {}
+        if not last_scan.get('processing'):
+            raise JsonResponse({'message': 'No process under scanning!'}, status=400)
+        task_id = last_scan.get('task_id')
+        app.control.revoke(task_id, terminate=True)
+        redis_mem.delete(str(user_id))
+        return JsonResponse({'task_id': task_id})
 
 
 class DeviceEditView(PermissionRequiredMixin, UpdateView):
