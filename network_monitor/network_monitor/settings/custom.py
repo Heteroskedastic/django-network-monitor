@@ -207,3 +207,6 @@ if config.has_option('cfg', 'MACVENDORS_API_TIMEOUT'):
     MACVENDORS_API_TIMEOUT = config.getint('cfg', 'MACVENDORS_API_TIMEOUT')
 if config.has_option('cfg', 'ENABLE_REGISTER_USER_VIEW'):
     ENABLE_REGISTER_USER_VIEW = config.getboolean('cfg', 'ENABLE_REGISTER_USER_VIEW')
+if config.has_option('cfg', 'ADMINS'):
+    ADMINS = [a.split('|') for a in config.getlist('cfg', 'ADMINS')]
+
