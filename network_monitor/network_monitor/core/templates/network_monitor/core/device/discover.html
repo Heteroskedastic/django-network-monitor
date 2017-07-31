@@ -34,15 +34,15 @@
                 <th>IP address</th>
                 <th>Mac address</th>
                 <th>Manufacture</th>
-                <th style="width: 100px;">Actions</th>
+                <th style="width: 140px;">Actions</th>
             </tr>
         </thead>
         <tbody>
         {% for device in last_scan.discovered_devices %}
-            <tr data-row-id="{{ forloop.counter }}">
+            <tr data-row-id="{{ forloop.counter }}" data-device-id="{{ device.obj.pk }}">
                 <td data-name="ip">
                 {% if device.obj %}
-                    <a href="{% url 'core:device-features' device.obj.pk %}">{{ device.ip }} <small class="text-muted">{{ device.obj.name }}</small></a>
+                    <a href="{% url 'core:device-features' device.obj.pk %}">{{ device.ip }}</a> <small class="text-muted">{{ device.obj.name }}</small> <small class="text-muted">[{{ device.obj.mac|default:'No Mac' }}]</small>
                 {% else %}
                     {{ device.ip }}
                 {% endif %}
@@ -62,6 +62,11 @@
                     <a href="{% url 'core:device-edit' device.obj.pk %}" class="btn btn-xs btn-primary">
                         <span class="fa fa-pencil"></span> Edit
                     </a>
+                    {% if device.status == 'conflict' %}
+                    <button type="button" name="quick-fixmac" data-toggle="popover" class="btn btn-xs btn-warning" data-ip="{{ device.ip }}" data-manufacture="{{ device.manufacture }}" data-mac="{{ device.mac }}">
+                        <span class="fa fa-check"></span> Fix Mac
+                    </button>
+                    {% endif %}
                 {% endif %}
                 </td>
             </tr>
@@ -100,6 +105,23 @@
         <div class="text-danger error-messages" style="display: none;"></div>
     </form>
 </div>
+
+<div id="quick-fixmac-popover" class="hidden">
+    <form name="quick-fixmac-form" method="post" action="{% url 'core:device-fixmac' 0 %}" data-row-ref="$$row_ref$$" data-device-id="$$device_id$$">
+        {% csrf_token %}
+        <div class="form-group">
+            <input type="text" name="mac" class="form-control input-sm" placeholder="Mac Adddress" value="$$mac$$" required>
+        </div>
+        <div class="form-group">
+            <button type="submit" name="quick-fixmac-ok" class="btn btn-sm btn-success" data-loading-text="<span class='fa fa-refresh fa-spin'></span>">
+                <span class="fa fa-check"></span>
+            </button>
+            <button type="button" name="close-popover" class="btn btn-sm btn-default"><span class="fa fa-close"></span></button>
+        </div>
+        <div class="text-danger error-messages" style="display: none;"></div>
+    </form>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -136,6 +158,18 @@ $(document).ready(function () {
             return html;
         }
     });
+    $('button[name=quick-fixmac]').popover({
+        html: true,
+        placement: 'left',
+        content: function () {
+            var html = $('#quick-fixmac-popover').html(),
+                mac = $(this).attr('data-mac'),
+                row_id=$(this).parents('tr').attr('data-row-id'),
+                device_id=$(this).parents('tr').attr('data-device-id');
+            html = html.replace('$$mac$$', mac).replace('$$row_ref$$', row_id).replace('$$device_id$$', device_id);
+            return html;
+        }
+    });
     $('#stopButton').on('click', function() {
         var csrftoken = $("[name=csrfmiddlewaretoken]").val();
         $.post("{% url 'core:device-discover-stop' %}", {'csrfmiddlewaretoken': csrftoken}, function() {
@@ -160,13 +194,52 @@ $(document).ready(function () {
                 device_id = data.id;
             detail_url = detail_url.slice(0, -2) + device_id + '/';
             edit_url = edit_url.slice(0, -2) + device_id + '/';
-            tr.find('td[data-name=ip]').html('<a href="{0}">{1} <small class="text-muted">{2}</small></a> <span class="label label-info">Added Now</span>'.f(detail_url, data.address, data.name));
+            tr.find('td[data-name=ip]').html('<a href="{0}">{1}</a> <small class="text-muted">{2}</small> <small class="text-muted">[{3}]</small> <span class="label label-info">Added Now</span>'.f(detail_url, data.address, data.name, data.mac || 'No Mac'));
             tr.find('td[data-name=actions]').html('<a href="{0}" class="btn btn-xs btn-primary"> <span class="fa fa-pencil"></span> Edit </a>'.format(edit_url));
             btn.button('reset');
             setTimeout(function () {
                 btn.prop('disabled', true);
             }, 0);
-            (($(this).parents(".popover").popover('hide').data('bs.popover') || {}).inState || {}).click = false;
+            (($(".popover").popover('hide').data('bs.popover') || {}).inState || {}).click = false;
+        }).fail(function (data) {
+            btn.button('reset');
+            var messages = [];
+            if (data.responseJSON && data.responseJSON.message) {
+                messages.push('<strong class="small">{0}</strong>'.f(data.responseJSON.message));
+            }
+            $.each((data.responseJSON.errors || {}), function(k, v) {
+                messages.push('<p class="small">{0}: {1}</p>'.f(k, v))
+            });
+            $('.error-messages', form).html(messages.join(' ')).show();
+        });
+    });
+    $(document).on('submit', 'form[name=quick-fixmac-form]', function (e) {
+        e.preventDefault();
+        var form = $(this),
+            btn = $('button[type=submit]', form),
+            device_id = form.attr('data-device-id'),
+            action = form.attr('action'),
+            form_action = action.slice(0, -2) + device_id + '/';
+        $('.error-messages', form).hide();
+        btn.button('loading');
+        $.ajax({
+            type: form.attr('method'),
+            url: form_action,
+            data: form.serialize()
+        }).done(function (data) {
+            var detail_url = "{% url 'core:device-features' 0 %}",
+                row_id = form.attr('data-row-ref'),
+                tr = $('tr[data-row-id={0}]'.f(row_id));
+            detail_url = detail_url.slice(0, -2) + device_id + '/';
+            tr.find('td[data-name=ip]').html('<a href="{0}">{1}</a> <small class="text-muted">{2}</small> <small class="text-muted">[{3}]</small> <span class="label label-info">Fixed Now</span>'.f(detail_url, data.address, data.name, data.mac || 'No Mac'));
+            btn.button('reset');
+            setTimeout(function () {
+                btn.prop('disabled', true);
+            }, 0);
+            tr.find('td[data-name=actions] button[name=quick-fixmac]').fadeOut('fast', function() {
+                $(this).remove();
+            });
+            (($(".popover").popover('hide').data('bs.popover') || {}).inState || {}).click = false;
         }).fail(function (data) {
             btn.button('reset');
             var messages = [];

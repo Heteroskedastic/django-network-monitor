@@ -7,7 +7,7 @@ from .views import IndexView, RegisterView, LoginView, LogoutView, \
     DeviceEditView, DeviceDeleteView, DeviceFeaturesView, EventListView, \
     EventDeleteView, UserAlertRuleListView, UserAlertRuleAddView, \
     UserAlertRuleEditView, UserAlertRuleDeleteView, DeviceSwitchActiveView, UserAlertRuleSwitchActiveView, \
-    DevicesStatusAjaxView, DevicePrintLabelView, DiscoverDeviceView, StopDiscoverDeviceView
+    DevicesStatusAjaxView, DevicePrintLabelView, DiscoverDeviceView, StopDiscoverDeviceView, DeviceFixMacView
 
 urlpatterns = [
     url(r'^$', IndexView.as_view(), name='index'),
@@ -24,6 +24,7 @@ urlpatterns = [
     url(r'^device/discover/$', DiscoverDeviceView.as_view(), name="device-discover"),
     url(r'^device/discover/stop/$', StopDiscoverDeviceView.as_view(), name="device-discover-stop"),
     url(r'^device/edit/(?P<pk>\d+)/$', DeviceEditView.as_view(), name="device-edit"),
+    url(r'^device/fixmac/(?P<pk>\d+)/$', DeviceFixMacView.as_view(), name="device-fixmac"),
     url(r'^device/switch-active/(?P<pk>\d+)/$', DeviceSwitchActiveView.as_view(), name="device-switch-active"),
     url(r'^device/delete/(?P<pk>\d+)/$', DeviceDeleteView.as_view(), name="device-delete"),
     url(r'^device/print-label/(?P<pk>\d+)/$', DevicePrintLabelView.as_view(), name="device-print-label"),

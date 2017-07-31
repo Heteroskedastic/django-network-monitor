@@ -22,7 +22,7 @@ from network_monitor.core.tasks import nmap_scan_network
 from network_monitor.helpers.utils import send_form_errors, success_message, \
     PermissionRequiredMixin, get_current_page_size, scan_network_ips, find_mac_manufacture, to_dict, warning_message
 from .forms import RegistrationForm, LoginForm, ProfileForm, DeviceForm, \
-    DeviceFeatureForm, ThresholdForm, UserAlertRuleForm, DiscoverDeviceForm
+    DeviceFeatureForm, ThresholdForm, UserAlertRuleForm, DiscoverDeviceForm, DeviceFixMacForm
 from .filters import DevicesFilter, EventsFilter
 from .models import Device, DeviceFeature, Threshold, Event, UserAlertRule, \
     SEVERITY_CHOICES
@@ -179,6 +179,62 @@ class DeviceAddView(PermissionRequiredMixin, CreateView):
         return reverse('core:device-list')
 
 
+class DeviceEditView(PermissionRequiredMixin, UpdateView):
+    permission_required = {
+        'get': 'core.view_device',
+        'post': 'core.change_device'
+    }
+    pk_url_kwarg = 'pk'
+    form_class = DeviceForm
+    model = Device
+    template_name = 'network_monitor/core/device/edit.html'
+
+    def get_form(self, form_class=None):
+        form = super(DeviceEditView, self).get_form(form_class=form_class)
+        if not self.request.user.has_perm("core.access_device_secret_data"):
+            for sf in Device.secret_fields():
+                form.fields.pop(sf, None)
+        return form
+
+    def form_invalid(self, form):
+        if self.request.is_ajax():
+            return JsonResponse({'message': 'Invalid parameters', 'errors': form.errors}, status=400)
+        return super(DeviceEditView, self).form_invalid(form)
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        if 'mac' in form.changed_data or not self.object.mac_manufacture:
+            self.object.mac_manufacture = self.object.fetch_mac_manufacture()
+        self.object.save()
+        if self.request.is_ajax():
+            return JsonResponse(to_dict(self.object, fields=['id', 'name', 'address', 'mac']))
+
+        success_message('Device "{}" updated successfully.'.format(self.object), self.request)
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse('core:device-list')
+
+
+class DeviceFixMacView(PermissionRequiredMixin, UpdateView):
+    permission_required = {
+        'get': 'core.view_device',
+        'post': 'core.change_device'
+    }
+    pk_url_kwarg = 'pk'
+    form_class = DeviceFixMacForm
+    model = Device
+
+    def form_invalid(self, form):
+        return JsonResponse({'message': 'Invalid parameters', 'errors': form.errors}, status=400)
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.mac_manufacture = self.object.fetch_mac_manufacture()
+        self.object.save()
+        return JsonResponse(to_dict(self.object, fields=['id', 'name', 'address', 'mac']))
+
+
 class DiscoverDeviceView(PermissionRequiredMixin, View):
     permission_required = 'core.add_device'
     template_name = "network_monitor/core/device/discover.html"
@@ -272,36 +328,6 @@ class StopDiscoverDeviceView(PermissionRequiredMixin, View):
         app.control.revoke(task_id, terminate=True)
         redis_mem.delete(str(user_id))
         return JsonResponse({'task_id': task_id})
-
-
-class DeviceEditView(PermissionRequiredMixin, UpdateView):
-    permission_required = {
-        'get': 'core.view_device',
-        'post': 'core.change_device'
-    }
-    pk_url_kwarg = 'pk'
-    form_class = DeviceForm
-    model = Device
-    template_name = 'network_monitor/core/device/edit.html'
-
-    def get_form(self, form_class=None):
-        form = super(DeviceEditView, self).get_form(form_class=form_class)
-        if not self.request.user.has_perm("core.access_device_secret_data"):
-            for sf in Device.secret_fields():
-                form.fields.pop(sf, None)
-        return form
-
-    def form_valid(self, form):
-        self.object = form.save(commit=False)
-        if 'mac' in form.changed_data or not self.object.mac_manufacture:
-            self.object.mac_manufacture = self.object.fetch_mac_manufacture()
-        self.object.save()
-        success_message('Device "{}" updated successfully.'.format(
-                        self.object), self.request)
-        return HttpResponseRedirect(self.get_success_url())
-
-    def get_success_url(self):
-        return reverse('core:device-list')
 
 
 class DeviceSwitchActiveView(PermissionRequiredMixin, SingleObjectMixin, View):

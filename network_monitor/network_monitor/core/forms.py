@@ -106,6 +106,13 @@ class DeviceForm(forms.ModelForm):
         }
 
 
+class DeviceFixMacForm(forms.ModelForm):
+
+    class Meta:
+        model = Device
+        fields = ['mac']
+
+
 class DiscoverDeviceForm(forms.Form):
     ip_range = forms.CharField(
         max_length=100, required=True,
