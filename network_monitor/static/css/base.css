@@ -343,3 +343,23 @@ footer .container .text-muted {
 .popover-content .form-group {
   margin-bottom: 5px;
 }
+
+#discover-device-filter-by-status {
+  width: 300px;
+}
+
+#discovered-devices-list thead tr {
+  background-color: gainsboro;
+}
+
+.dataTables_discovereddevicesstatusfilter {
+  float: left;
+  padding: 5px;
+  padding-bottom: 0;
+}
+
+#discovered-devices-list_filter {
+  float: right;
+  padding: 5px;
+  padding-bottom: 0;
+}

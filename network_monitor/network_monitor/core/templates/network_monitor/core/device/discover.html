@@ -3,6 +3,11 @@
 {% load bootstrap3 %}
 {% load util_tags %}
 
+{% block extra_css %}
+    <link href="{{ STATIC_URL }}css/chosen.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{{STATIC_URL}}css/datatables-all.min.css">
+{% endblock %}
+
 {% block breadcrumb_items %}
 <li><a href="{% url 'core:device-list' %}">Device List</a></li>
 <li>New Device</li>
@@ -28,7 +33,7 @@
 <div class="text-success"> Last search records for: <strong>{{ last_scan.ip_range }}</strong></div>
 {% endif %}
 <div class="panel panel-default">
-    <table class="table table-striped table-hover table-advance">
+    <table class="table table-striped table-hover table-advance" id="discovered-devices-list">
         <thead>
             <tr>
                 <th>IP address</th>
@@ -53,7 +58,7 @@
                 </td>
                 <td data-name="mac">{{ device.mac|default:'N/A' }}</td>
                 <td data-name="manufacture">{{ device.manufacture|default:'N/A' }}</td>
-                <td data-name="actions">
+                <td data-name="actions" data-search="{{ device.status }}">
                 {% if device.status == 'new' %}
                     <button type="button" name="quick-add" data-toggle="popover" class="btn btn-xs btn-success" data-ip="{{ device.ip }}" data-manufacture="{{ device.manufacture }}" data-mac="{{ device.mac }}">
                         <span class="fa fa-plus"></span> Quick Add <span class="caret"></span>
@@ -125,6 +130,8 @@
 {% endblock %}
 
 {% block extra_js %}
+<script type="text/javascript" src="{{STATIC_URL}}js/datatables-all.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/chosen.jquery.min.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}js/utils.js"></script>
 <script type="text/javascript">
 $(document).ready(function () {
@@ -142,9 +149,20 @@ $(document).ready(function () {
     $('#id_ip_range').prop('disabled', true);
     checkIntervalId = setInterval(checkLastScanResult, 5000);
     {% endif %}
+
     $('#discoverDeviceForm').on('submit', function () {
         $('#searchButton').button('loading');
     });
+    table = $('#discovered-devices-list').dataTable({
+        bPaginate: false,
+        ordering: false,
+        dom: 'f<"dataTables_discovereddevicesstatusfilter">rt',
+    });
+    $(".dataTables_discovereddevicesstatusfilter").html('<select id="discover-device-filter-by-status" multiple="multiple" class="chosen-select" data-placeholder="Filter by Status"> <option value="new">New</option> <option value="existing">Existing</option> <option value="conflict">Mismatch Mac</option></select>');
+    $('.chosen-select').chosen({allow_single_deselect: true}).on('change', function () {
+        table.fnFilter(($(this).val() || []).join('|'), 3, true, false, true, true);
+    });
+
     $('button[name=quick-add]').popover({
         html: true,
         placement: 'left',
