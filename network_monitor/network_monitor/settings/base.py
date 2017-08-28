@@ -19,7 +19,7 @@ from kombu import Queue
 BASE_DIR = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-CUSTOM_CONFIG_PATH = '/opt/webapps/network_monitor/etc/custom_config.py'
+EXTERNAL_CONFIG_PATH = '/opt/webapps/network_monitor/etc/external_config.py'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.9/howto/deployment/checklist/

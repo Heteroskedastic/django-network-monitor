@@ -1,7 +1,7 @@
 import os
 import sys
 
-from .base import CUSTOM_CONFIG_PATH
+from .base import EXTERNAL_CONFIG_PATH
 
 def load_module_from_source(path, name=""):
     try:
@@ -20,14 +20,14 @@ def load_module_from_source(path, name=""):
     return m
 
 
-DJANGO_CUSTOM_CONFIG_PATH = os.getenv('DJANGO_CUSTOM_CONFIG_PATH', '') or CUSTOM_CONFIG_PATH
+DJANGO_EXTERNAL_CONFIG_PATH = os.getenv('DJANGO_EXTERNAL_CONFIG_PATH', '') or EXTERNAL_CONFIG_PATH
 try:
-    _custom_config = load_module_from_source(DJANGO_CUSTOM_CONFIG_PATH, '')
+    _external_config = load_module_from_source(DJANGO_EXTERNAL_CONFIG_PATH, '')
     self_module = sys.modules[__name__]
-    for k in dir(_custom_config):
+    for k in dir(_external_config):
         if k.isupper():
-            setattr(self_module, k, getattr(_custom_config, k))
+            setattr(self_module, k, getattr(_external_config, k))
 except ImportError:
     pass
 except Exception:
-    print('!!!PLEASE CHECK!!! Invalid custom setting format: [{}].'.format(DJANGO_CUSTOM_CONFIG_PATH))
+    print('!!!PLEASE CHECK!!! Invalid external setting format: [{}].'.format(DJANGO_EXTERNAL_CONFIG_PATH))
