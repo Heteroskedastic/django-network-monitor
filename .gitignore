@@ -93,5 +93,5 @@ env2/
 .idea/
 
 # special files
-network_monitor/network_monitor/settings/custom_config_prod.ini
+network_monitor/network_monitor/settings/custom_config_prod.py
 collected_static/
