@@ -65,8 +65,8 @@
     1. change server name in the following config file to server DNS(or ip):
         /etc/nginx/sites-enabled/network_monitor.conf
     1. change HOSTNAME in the custom project config file to server DNS(or ip):
-        /opt/webapps/network_monitor/etc/custom_config.ini
-    1. update commented configs in /opt/webapps/network_monitor/etc/custom_config.ini:
+        /opt/webapps/network_monitor/etc/custom_config.py
+    1. update commented configs in /opt/webapps/network_monitor/etc/custom_config.py:
         - SECRET_KEY
         - MAILGUN_SERVER_NAME
         - MAILGUN_ACCESS_KEY
@@ -80,5 +80,3 @@
 1. restart the services
     1. $ sudo service supervisor restart
     1. $ sudo service nginx restart
-
-

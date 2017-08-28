@@ -47,7 +47,7 @@ if [ -d "$DJANGODIR" ]; then
 else
     git clone $GITURL -b $BRANCH $DJANGODIR
 fi
-cp $DJANGODIR/network_monitor/network_monitor/settings/custom_config_sample.ini $PROJECTDIR/etc/custom_config.ini
+cp $DJANGODIR/network_monitor/network_monitor/settings/custom_config_sample.py $PROJECTDIR/etc/custom_config.py
 
 virtualenv -p python3 $ENVDIR
 source $ENVDIR/bin/activate
