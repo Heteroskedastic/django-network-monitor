@@ -20,12 +20,14 @@ def load_module_from_source(path, name=""):
     return m
 
 
-GLOBAL_CONF_PY_PATH = os.getenv('NETWORK_MONITOR_CONFIG_PATH', '') or CUSTOM_CONFIG_PATH
+DJANGO_CUSTOM_CONFIG_PATH = os.getenv('DJANGO_CUSTOM_CONFIG_PATH', '') or CUSTOM_CONFIG_PATH
 try:
-    _custom_config = load_module_from_source(GLOBAL_CONF_PY_PATH, '')
+    _custom_config = load_module_from_source(DJANGO_CUSTOM_CONFIG_PATH, '')
     self_module = sys.modules[__name__]
     for k in dir(_custom_config):
         if k.isupper():
             setattr(self_module, k, getattr(_custom_config, k))
 except ImportError:
     pass
+except Exception:
+    print('!!!PLEASE CHECK!!! Invalid custom setting format: [{}].'.format(DJANGO_CUSTOM_CONFIG_PATH))
