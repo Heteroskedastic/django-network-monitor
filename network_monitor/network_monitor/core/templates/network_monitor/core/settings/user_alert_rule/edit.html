@@ -91,7 +91,7 @@ $(document).ready(function () {
   }).on('hidden.bs.collapse', function() {
     $(this).parent().find(".fa-minus").removeClass("fa-minus").addClass("fa-plus")
   });
-  bindModalAction('actionModal', 'delete');
+  bindModalAction('actionModal', 'button[name=delete]');
   ruleParamStruct = {
     severity: {
       choices: {{severity_choices|safe}},

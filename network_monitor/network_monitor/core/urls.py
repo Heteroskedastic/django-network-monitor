@@ -7,7 +7,8 @@ from .views import IndexView, RegisterView, LoginView, LogoutView, \
     DeviceEditView, DeviceDeleteView, DeviceFeaturesView, EventListView, \
     EventDeleteView, UserAlertRuleListView, UserAlertRuleAddView, \
     UserAlertRuleEditView, UserAlertRuleDeleteView, DeviceSwitchActiveView, UserAlertRuleSwitchActiveView, \
-    DevicesStatusAjaxView, DevicePrintLabelView, DiscoverDeviceView, StopDiscoverDeviceView, DeviceFixMacView
+    DevicesStatusAjaxView, DevicePrintLabelView, DiscoverDeviceView, StopDiscoverDeviceView, DeviceFixMacView, \
+    PingTestDeviceView
 
 urlpatterns = [
     url(r'^$', IndexView.as_view(), name='index'),
@@ -30,6 +31,7 @@ urlpatterns = [
     url(r'^device/print-label/(?P<pk>\d+)/$', DevicePrintLabelView.as_view(), name="device-print-label"),
     url(r'^device/features/(?P<pk>\d+)/$', DeviceFeaturesView.as_view(), name="device-features"),
     url(r'^device/status/(?P<pk>((\d+),?)+)/$', DevicesStatusAjaxView.as_view(), name="device-status"),
+    url(r'^device/ping-test/(?P<pk>\d+)/$', PingTestDeviceView.as_view(), name="device-ping-test"),
     url(r'^user_alert_rule/list/$', UserAlertRuleListView.as_view(), name="user_alert_rule-list"),
     url(r'^user_alert_rule/add/$', UserAlertRuleAddView.as_view(), name="user_alert_rule-add"),
     url(r'^user_alert_rule/edit/(?P<pk>\d+)/$', UserAlertRuleEditView.as_view(), name="user_alert_rule-edit"),

@@ -1,7 +1,9 @@
 import json
+import subprocess
+
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.db.models import Q
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponse
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.core.urlresolvers import reverse
@@ -26,6 +28,10 @@ from .forms import RegistrationForm, LoginForm, ProfileForm, DeviceForm, \
 from .filters import DevicesFilter, EventsFilter
 from .models import Device, DeviceFeature, Threshold, Event, UserAlertRule, \
     SEVERITY_CHOICES
+try:
+    from network_monitor.helpers.utils import py2_subprocess_run as subprocess_run
+except ImportError:
+    from subprocess import run as subprocess_run
 
 
 class IndexView(PermissionRequiredMixin, View):
@@ -413,6 +419,24 @@ class DevicesStatusAjaxView(PermissionRequiredMixin, View):
             }
 
         return JsonResponse({'devices': devices})
+
+
+class PingTestDeviceView(PermissionRequiredMixin, SingleObjectMixin, View):
+    permission_required = 'core.ping_test_device'
+    pk_url_kwarg = 'pk'
+    model = Device
+
+    def post(self, request, *args, **kwargs):
+        device = self.get_object()
+        cmd = "/bin/ping -n -c 5 -W 1 {address}".format(address=device.address)
+        result = subprocess_run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        response = result.stdout.decode()
+        status = 'success'
+        if not response:
+            status = 'error'
+            response = result.stderr.decode()
+
+        return JsonResponse({'data': response, 'status': status})
 
 
 class EventListView(PermissionRequiredMixin, View):

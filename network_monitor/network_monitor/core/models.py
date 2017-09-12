@@ -87,6 +87,7 @@ class Device(models.Model):
     class Meta:
         permissions = (
             ('access_device_secret_data', 'Can access device secret data'),
+            ('ping_test_device', 'Can send ping test for device'),
         )
 
     def __str__(self):

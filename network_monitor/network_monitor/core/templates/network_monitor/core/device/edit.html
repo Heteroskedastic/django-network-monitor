@@ -24,7 +24,7 @@
     <label class="col-md-2 control-label"></label>
     <div class="col-md-9">
       <button type="submit" class="btn btn-primary" name="submit">Save</button>
-      <a class="btn btn-default" href="{% url 'core:device-list' %}">Cancel</a>
+      <a class="btn btn-default" href="{% url 'core:device-features' object.pk %}">Cancel</a>
       <span class="pull-right">
         <button type="button" class="btn btn-danger" name="delete"><span class="fa fa-trash"></span> Delete</button>
       </span>
@@ -47,7 +47,7 @@
 
 <script type="text/javascript">
 $(document).ready(function () {
-  bindModalAction('actionModal', 'delete');
+  bindModalAction('actionModal', 'button[name=delete]');
   $('#id_purchase_date, #id_manufacture_date, #id_warranty_expiration_date').datetimepicker({
     format: 'YYYY-MM-DD',
     showTodayButton: true,

@@ -56,3 +56,22 @@
 .togglable-password {
     cursor: pointer;
 }
+
+.ping-test-label {
+    font-size: 17px !important;
+}
+
+.ping-response pre {
+    border-width: 0;
+    background-color: #000000;
+    margin: 0;
+    color: #ffffff;
+}
+
+.ping-response pre.success {
+    color: #7df77f;
+}
+
+.ping-response pre.error {
+    color: #ff0000;
+}

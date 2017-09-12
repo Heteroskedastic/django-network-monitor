@@ -64,9 +64,9 @@
 
 <script type="text/javascript">
 $(document).ready(function () {
-  bindModalAction('actionModal', 'delete-threshold', 'Delete Threshold', 'Are you sure to delete?', '{% url 'device-feature-threshold-delete' device_feature.device.id device_feature.feature 0 %}');
-  bindModalAction('actionModal', 'enable-threshold', 'Enable Threshold', 'Are you sure to Enable?', '{% url 'device-feature-threshold-switch' device_feature.device.id device_feature.feature 0 %}');
-  bindModalAction('actionModal', 'disable-threshold', 'Disable Threshold', 'Are you sure to Disable?', '{% url 'device-feature-threshold-switch' device_feature.device.id device_feature.feature 0 %}');
+  bindModalAction('actionModal', 'button[name=delete-threshold]', 'Delete Threshold', 'Are you sure to delete?', '{% url 'device-feature-threshold-delete' device_feature.device.id device_feature.feature 0 %}');
+  bindModalAction('actionModal', 'button[name=enable-threshold]', 'Enable Threshold', 'Are you sure to Enable?', '{% url 'device-feature-threshold-switch' device_feature.device.id device_feature.feature 0 %}');
+  bindModalAction('actionModal', 'button[name=disable-threshold]', 'Disable Threshold', 'Are you sure to Disable?', '{% url 'device-feature-threshold-switch' device_feature.device.id device_feature.feature 0 %}');
 
 });
 </script>

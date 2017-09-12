@@ -26,8 +26,8 @@ function togglablePassword(selector, dataPos) {
     })
 }
 
-function bindModalAction(modalId, actionName, title, message, action) {
-    $('button[name={0}]'.f(actionName)).click(function(e) {
+function bindModalAction(modalId, actionSelector, title, message, action) {
+    $(actionSelector).click(function(e) {
         e.preventDefault();
         var form = $('#{0} form'.f(modalId));
         if(action) {

@@ -108,7 +108,7 @@ $(document).ready(function () {
         $('[name][type!=hidden]', form).val('').attr('disabled', true).trigger("chosen:updated");
         form.submit();
     });
-    bindModalAction('actionModal', 'delete-event', 'Delete Event', 'Are you sure to delete?', '{% url 'core:event-delete' 0 %}');
+    bindModalAction('actionModal', 'button[name=delete-event]', 'Delete Event', 'Are you sure to delete?', '{% url 'core:event-delete' 0 %}');
 });
 </script>
 {% endblock %}

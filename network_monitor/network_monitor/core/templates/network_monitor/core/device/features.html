@@ -14,6 +14,12 @@
 {% block content %}
     <div class="well">
         <legend class="pad-bot5">
+            <div class="btn-group">
+                <button type="button" title="Tools" class="btn btn-default dropdown-toggle btn-sm" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> <span class="fa fa-wrench"></span> <span class="hidden-xs">Tools</span> <span class="caret"></span></button>
+                <ul class="dropdown-menu">
+                    <li><a href="#" data-toggle="modal" data-target="#pingTestModal"><span class="fa fa-search"></span> Ping Test</a></li>
+                </ul>
+            </div>
             <a target="_blank" class="btn btn-sm btn-danger" title="Print Label" href="{% url 'core:device-print-label' device.pk %}"><span class="fa fa-print"></span></a>
             <a class="btn btn-sm btn-primary" title="Edit Device" href="{% url 'core:device-edit' device.pk %}"><span class="fa fa-pencil"></span></a>
             <span class="text-primary">{{device|title}}<small class="text-muted"> - <a href="{{ device.web_url }}" target="_blank">{{ device.address }}</a></small></span>
@@ -97,6 +103,34 @@
         <tr><td class="text-center gray-color" colspan="4"> <em>[NO RECORD!]</em></td></tr>
         {% endfor %}
     </table>
+
+    <div class="modal fade" id="pingTestModal" tabindex="-1" role="dialog"
+         aria-labelledby="pingTestModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title"><strong>Ping Test on: {{ device }}</strong></h4>
+                </div>
+                <div class="modal-body">
+                    <form id="pingTestForm" method="post" action="{% url 'core:device-ping-test' device.pk %}">
+                        {% csrf_token %}
+                    </form>
+                    <p>
+                        <span class="label label-info ping-test-label">&gt;&gt;&gt; ping {{ device.address }}</span>
+                        <button class="btn btn-success btn-sm" name="ping-test" data-loading-text="<span class='fa fa-circle-o-notch fa-spin'></span> Running" ><span class="fa fa-play"></span> Run</button>
+                    </p>
+                    <div class="well ping-response">
+                        <span class="text-muted"><em>NO RESPONSE YET!</em></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
 {% endblock %}
 
 {% block extra_js %}
@@ -106,6 +140,27 @@
 <script type="text/javascript">
 $(document).ready(function () {
     togglablePassword('.togglable-password');
+    $('button[name=ping-test]').click(function(e) {
+        e.preventDefault();
+        var $btn = $(this).button('loading'),
+            $form = $('#pingTestForm'),
+            $pingResponse = $('.ping-response').html('<span class="text-muted"><em>Pinging, Please wait...</em></span>');
+        $.post($form.attr('action'), $form.serialize())
+            .done(function (data) {
+                var response = data.data,
+                    status = data.status;
+                if (status === 'error') {
+                    response = response || 'UNKNOWN ERROR!!!';
+                }
+                $pingResponse.html('<pre class="{0}">{1}</pre>'.f(status, response));
+            })
+            .fail(function () {
+                $pingResponse.html('<span class="text-danger"><h3>FAILED!</h3></span>');
+            })
+            .always(function () {
+                $btn.button('reset');
+            });
+    });
 });
 </script>
 {% endblock %}

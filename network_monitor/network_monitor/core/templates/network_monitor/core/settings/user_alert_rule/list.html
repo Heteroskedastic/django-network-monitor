@@ -51,9 +51,9 @@
 
 <script type="text/javascript">
 $(document).ready(function () {
-    bindModalAction('actionModal', 'delete-rule', 'Delete Alert Rule', 'Are you sure to delete?', '{% url 'core:user_alert_rule-delete' 0 %}');
-    bindModalAction('actionModal', 'enable-rule', 'Enable Alert Rule', 'Are you sure to Enable?', '{% url 'core:user_alert_rule-switch-active' 0 %}');
-    bindModalAction('actionModal', 'disable-rule', 'Disable Alert Rule', 'Are you sure to Disable?', '{% url 'core:user_alert_rule-switch-active' 0 %}');
+    bindModalAction('actionModal', 'button[name=delete-rule]', 'Delete Alert Rule', 'Are you sure to delete?', '{% url 'core:user_alert_rule-delete' 0 %}');
+    bindModalAction('actionModal', 'button[name=enable-rule]', 'Enable Alert Rule', 'Are you sure to Enable?', '{% url 'core:user_alert_rule-switch-active' 0 %}');
+    bindModalAction('actionModal', 'button[name=disable-rule]', 'Disable Alert Rule', 'Are you sure to Disable?', '{% url 'core:user_alert_rule-switch-active' 0 %}');
 
 });
 </script>
