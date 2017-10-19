@@ -46,6 +46,9 @@ class DevicesFilter(FilterSet):
     name = filters.CharFilter(lookup_expr='icontains', required=False, widget=forms.TextInput(attrs={
         'placeholder': 'Filter by Name', 'class': 'form-control', 'style': 'height: 28px',
     }))
+    mac = filters.CharFilter(lookup_expr='icontains', required=False, widget=forms.TextInput(attrs={
+        'placeholder': 'Filter by Mac', 'class': 'form-control', 'style': 'height: 28px',
+    }))
     address = filters.CharFilter(lookup_expr='icontains', required=False, widget=forms.TextInput(attrs={
         'placeholder': 'Filter by Address', 'class': 'form-control', 'style': 'height: 28px',
     }))
