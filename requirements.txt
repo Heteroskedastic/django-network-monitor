@@ -20,3 +20,4 @@ b2==0.7.0
 pytimeparse==1.1.6
 python-nmap==0.6.1
 arpreq==0.3.2
+django-dynamic-preferences==1.4

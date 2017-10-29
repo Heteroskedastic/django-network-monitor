@@ -1,13 +1,11 @@
 import string
 import jsonfield
 import operator
-import requests
 from functools import reduce
 from django.db.models import Q
 from django.utils import timezone
 from django.apps import apps
 from django.db import models
-from django.conf import settings
 from django.dispatch import receiver
 from django.db import IntegrityError
 from django.contrib.auth.models import User
@@ -46,7 +44,7 @@ class Device(models.Model):
     name = models.CharField("Name", max_length=256, unique=True)
     address = models.GenericIPAddressField("IP Address")
     web_port = models.PositiveSmallIntegerField("Web Port", null=True, blank=True)
-    mac = MACAddressField('Mac Address', null=True, blank=True)
+    mac = MACAddressField('Mac Address', null=True, blank=True, unique=True)
     mac_manufacture = models.CharField(max_length=128, null=True, blank=True)
     username = models.CharField("Username", max_length=128, null=True,
                                 blank=True)
@@ -61,6 +59,7 @@ class Device(models.Model):
     status = models.CharField('Status', max_length=16, choices=STATUS_CHOICES, default=STATUS_DOWN)
     tags = models.CharField('Tags', max_length=1024, blank=True, null=True, default=None)
     last_seen = models.DateTimeField("Last Seen", null=True)
+    created = models.DateTimeField("Created At", auto_now_add=True)
     active = models.BooleanField("Active", default=True)
 
     @classmethod
@@ -89,6 +88,11 @@ class Device(models.Model):
             ('access_device_secret_data', 'Can access device secret data'),
             ('ping_test_device', 'Can send ping test for device'),
         )
+
+    def save(self, *args, **kwargs):
+        if self.mac == '':
+            self.mac = None
+        return super(Device, self).save(*args, **kwargs)
 
     def __str__(self):
         return self.name.capitalize()

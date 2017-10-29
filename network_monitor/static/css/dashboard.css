@@ -75,3 +75,7 @@
 .ping-response pre.error {
     color: #ff0000;
 }
+
+#form-settings-general .bootstrap-tagsinput .tag {
+    background-color: #4caf50;
+}

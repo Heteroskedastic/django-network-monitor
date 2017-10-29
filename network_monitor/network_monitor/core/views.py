@@ -17,12 +17,14 @@ from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.views import password_change
 from django.views.generic.edit import CreateView
 from django.views.generic.detail import SingleObjectMixin
+from dynamic_preferences.forms import global_preference_form_builder
+from dynamic_preferences.registries import global_preferences_registry
 
 from network_monitor.celery import app
 from network_monitor.helpers.shortcuts import get_redis_mem
 from network_monitor.core.tasks import nmap_scan_network
 from network_monitor.helpers.utils import send_form_errors, success_message, \
-    PermissionRequiredMixin, get_current_page_size, scan_network_ips, find_mac_manufacture, to_dict, warning_message
+    PermissionRequiredMixin, get_current_page_size, find_mac_manufacture, to_dict, warning_message
 from .forms import RegistrationForm, LoginForm, ProfileForm, DeviceForm, \
     DeviceFeatureForm, ThresholdForm, UserAlertRuleForm, DiscoverDeviceForm, DeviceFixMacForm
 from .filters import DevicesFilter, EventsFilter
@@ -476,7 +478,7 @@ class UserAlertRuleListView(PermissionRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         rules = UserAlertRule.objects.filter(user=request.user).order_by('id')
         ctx = {'alert_rules': rules}
-        return render(request, "network_monitor/core/settings/user_alert_rule/list.html", ctx)
+        return render(request, "network_monitor/core/user_alert_rule/list.html", ctx)
 
 
 class UserAlertRuleSwitchActiveView(PermissionRequiredMixin, SingleObjectMixin, View):
@@ -512,7 +514,7 @@ def user_alert_rule_contxt():
 class UserAlertRuleAddView(PermissionRequiredMixin, CreateView):
     permission_required = 'core.add_useralertrule'
     form_class = UserAlertRuleForm
-    template_name = 'network_monitor/core/settings/user_alert_rule/add.html'
+    template_name = 'network_monitor/core/user_alert_rule/add.html'
 
     def get_context_data(self, **kwargs):
         ctx = super(UserAlertRuleAddView, self).get_context_data(**kwargs)
@@ -539,7 +541,7 @@ class UserAlertRuleEditView(PermissionRequiredMixin, UpdateView):
     pk_url_kwarg = 'pk'
     form_class = UserAlertRuleForm
     model = UserAlertRule
-    template_name = 'network_monitor/core/settings/user_alert_rule/edit.html'
+    template_name = 'network_monitor/core/user_alert_rule/edit.html'
 
     def get_context_data(self, **kwargs):
         ctx = super(UserAlertRuleEditView, self).get_context_data(**kwargs)
@@ -796,3 +798,36 @@ class DeviceFeatureThresholdSwitchView(PermissionRequiredMixin,
         df = self.get_device_feature()
         return reverse('device-feature-threshold-list',
                        args=(self.device_object.pk, df.feature))
+
+
+class SettingGeneralView(PermissionRequiredMixin, View):
+    permission_required = 'dynamic_preferences.change_globalpreferencemodel'
+    template_name = "network_monitor/core/settings/general.html"
+    sections = ['dhcp_scan']
+
+    def get_form(self, section=None):
+        data = None
+        if self.request.method == 'POST':
+            data = self.request.POST
+        form_class = global_preference_form_builder(**({'section': section} if section else {}))
+        return form_class(data=data)
+
+    def get_context(self):
+        forms = {section: self.get_form(section=section) for section in self.sections}
+        return {'forms': forms}
+
+    def get(self, request, *args, **kwargs):
+        return render(request, self.template_name, self.get_context())
+
+    def post(self, request, *args, **kwargs):
+
+        form = self.get_form()
+        if form.is_valid():
+            global_preferences = global_preferences_registry.manager()
+            for k, v in form.cleaned_data.items():
+                global_preferences[k] = v
+
+            success_message('Settings Updated successfully', request)
+            return redirect('core:settings-general')
+
+        return render(request, self.template_name, self.get_context())

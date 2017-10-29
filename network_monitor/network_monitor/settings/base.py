@@ -13,8 +13,11 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+from datetime import timedelta
+
 from kombu import Exchange
 from kombu import Queue
+from celery.schedules import crontab
 
 BASE_DIR = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -43,6 +46,7 @@ INSTALLED_APPS = [
     'bootstrap_admin',  # always before django.contrib.admin
     'django.contrib.admin',
     'django.contrib.auth',
+    'dynamic_preferences',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
@@ -84,6 +88,7 @@ TEMPLATES = [
             'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
+                'dynamic_preferences.processors.global_preferences',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.i18n',
@@ -136,6 +141,33 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 BOOTSTRAP_ADMIN_SIDEBAR_MENU = True
+
+# available settings with their default values
+DYNAMIC_PREFERENCES = {
+
+    # a python attribute that will be added to model instances with preferences
+    # override this if the default collide with one of your models attributes/fields
+    'MANAGER_ATTRIBUTE': 'preferences',
+
+    # The python module in which registered preferences will be searched within each app
+    'REGISTRY_MODULE': 'dynamic_preferences_registry',
+
+    # Allow quick editing of preferences directly in admin list view
+    # WARNING: enabling this feature can cause data corruption if multiple users
+    # use the same list view at the same time, see https://code.djangoproject.com/ticket/11313
+    'ADMIN_ENABLE_CHANGELIST_FORM': False,
+
+    # Customize how you can access preferences from managers. The default is to
+    # separate sections and keys with two underscores. This is probably not a settings you'll
+    # want to change, but it's here just in case
+    'SECTION_KEY_SEPARATOR': '__',
+
+    # Use this to disable caching of preference. This can be useful to debug things
+    'ENABLE_CACHE': True,
+
+    # Use this to disable checking preferences names. This can be useful to debug things
+    'VALIDATE_NAMES': True,
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.9/topics/i18n/
@@ -195,6 +227,7 @@ BROKER_URL = 'redis://localhost:6379/3'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/3'
 CELERY_QUEUES = (
     Queue('default', Exchange('default'), routing_key='default'),
+    Queue('scheduled_tasks', Exchange('scheduled_tasks'), routing_key='scheduled_tasks'),
     Queue('periodic_tasks', Exchange('periodic_tasks'), routing_key='periodic_tasks'),
     Queue('periodic_tasks_long', Exchange('periodic_tasks_long'), routing_key='periodic_tasks_long'),
 )
@@ -209,6 +242,29 @@ CELERY_ROUTES = {
     'network_monitor.core.tasks.check_alert_rules_periodic': {
         'queue': 'periodic_tasks',
         'routing_key': 'periodic_tasks',
+    },
+    'network_monitor.core.tasks.dhcp_scan_devices': {
+        'queue': 'scheduled_tasks',
+        'routing_key': 'scheduled_tasks',
+    },
+}
+
+CELERYBEAT_SCHEDULE = {
+    'network_monitor.core.tasks.check_device_status_periodic': {
+        'task': 'network_monitor.core.tasks.check_device_status_periodic',
+        'schedule': timedelta(minutes=5),
+        'args': ()
+    },
+    'network_monitor.core.tasks.check_alert_rules_periodic': {
+        'task': 'network_monitor.core.tasks.check_alert_rules_periodic',
+        'schedule': timedelta(minutes=2),
+        'args': ()
+    },
+    'network_monitor.core.tasks.dhcp_scan_devices': {
+        'task': 'network_monitor.core.tasks.dhcp_scan_devices',
+        'schedule': crontab(hour='9,21', minute=0),
+        # 'schedule': crontab(hour=15, minute=12),
+        'args': ()
     },
 }
 

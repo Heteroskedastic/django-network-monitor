@@ -1,14 +1,18 @@
 from __future__ import absolute_import
 
+import random
 import subprocess
+from datetime import timedelta
+
+from django.db.models import Q
+from dynamic_preferences.registries import global_preferences_registry
+
 try:
     from network_monitor.helpers.utils import py2_subprocess_run as subprocess_run
 except ImportError:
     from subprocess import run as subprocess_run
 from network_monitor.helpers.utils import scan_network_ips
 from bs4 import BeautifulSoup
-from celery.decorators import periodic_task
-from datetime import timedelta
 from django.utils import timezone, six
 from django.core.mail import send_mail
 from django.conf import settings
@@ -82,7 +86,7 @@ def send_event_by_rule(event, rule):
     event.save(update_fields=["notify_time"])
 
 
-@periodic_task(run_every=timedelta(minutes=2), ignore_result=True)
+@celery_app.task()
 def check_alert_rules_periodic():
     '''
     check user alert rules to notify
@@ -100,7 +104,7 @@ def check_alert_rules_periodic():
     Event.objects.exclude(seen=True).update(seen=True)
 
 
-@periodic_task(run_every=timedelta(minutes=5), ignore_result=True)
+@celery_app.task()
 def check_device_status_periodic():
     '''
     check connection status of devices
@@ -173,3 +177,79 @@ def nmap_scan_network(user_id, ip_range):
         logger.exception('UnExpected Exception')
     finally:
         logger.info('++++++++++++++ Finished Scanning network [%s] by [%s] ...', ip_range, user_id)
+
+
+def create_unique_device(name, **kwargs):
+    counter = 1
+    while True:
+        if Device.objects.filter(name=name).count() > 0:
+            name = '{}.{}'.format(name, counter)
+            counter += 1
+        else:
+            break
+    device = Device(name=name, **kwargs)
+    device.mac_manufacture = device.fetch_mac_manufacture()
+    device.save()
+    return device
+
+def _check_discovered_devices(scan, auto_add_new=True):
+    for ip, data in scan.items():
+        logger.info('*** Checking device with ip: [%s]', ip)
+        mac = data.get('vendor', {}).get('mac')
+        hostnames = [d.get('name') for d in data.get('hostnames', []) if d.get('name')]
+        if not mac:
+            logger.warning('!!! Unknown mac for device with ip: %s', ip)
+            continue
+        device = Device.objects.filter(mac=mac).first()
+        if device and (device.address != ip):
+            device.address = ip
+            device.active = True
+            device.save(update_fields=['address', 'active'])
+            logger.info('*** assigned new ip for device <%s: %s>.', device.id, device)
+        elif (not device) and auto_add_new:
+            name = '{} - Auto'.format(hostnames[0] if hostnames else ip)
+            device = create_unique_device(name, address=ip, mac=mac)
+            logger.info('*** created new device %s. [ip=%s mac=%s]', device, device.address, device.mac)
+        if device and not device.active:
+            device.active = True
+            device.save(update_fields=['active'])
+
+
+def _check_disabled_devices(auto_disable_after):
+    disable_after = timedelta(days=auto_disable_after)
+    max_last_seen = timezone.now() - disable_after
+    devices = Device.objects.filter(Q(last_seen__isnull=True) & Q(created__lt=max_last_seen)|
+                                    Q(last_seen__isnull=False) & Q(last_seen__lt=max_last_seen),
+                                    active=True)
+    devices_count = devices.count()
+    if devices_count > 0:
+        logger.info('!!! [%s] idle devices found to be archived!', devices_count)
+        devices.update(active=False)
+
+
+@celery_app.task()
+def dhcp_scan_devices():
+    global_preferences = global_preferences_registry.manager()
+    logger.info('+ Start DHCP Scanning network ...')
+    enabled_dhcp = global_preferences['dhcp_scan__is_enabled']
+    if not enabled_dhcp:
+        logger.info('!!! Stopped Scanning! DHCP Scan is Disabled !!!')
+        return
+    ip_ranges = global_preferences['dhcp_scan__ip_ranges']
+    if not ip_ranges:
+        logger.info('!!! Stopped Scanning! No ip_ranges set in dhcp_scan settings !!!')
+        return
+    ip_ranges = [ip_range.strip() for ip_range in ip_ranges.split(',')]
+    auto_add_new = global_preferences['dhcp_scan__auto_add_new']
+    for ip_range in ip_ranges:
+        logger.info('*** Scanning ip range: [%s] ...', ip_range)
+        scan = scan_network_ips(ip_range)
+        logger.info('*** Checking [%s] discovered devices in range [%s] ...', len(scan), ip_range)
+        _check_discovered_devices(scan, auto_add_new=auto_add_new)
+
+    logger.info('*** Checking to disable/archive not seen devices ...')
+    auto_disable_after = global_preferences['dhcp_scan__auto_disable_after']
+    if auto_disable_after:
+        _check_disabled_devices(auto_disable_after)
+
+    logger.info('+++ Finished DHCP Scanning network ...')

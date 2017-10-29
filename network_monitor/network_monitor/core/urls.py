@@ -1,4 +1,4 @@
-from django.conf.urls import url
+from django.conf.urls import url, include
 from django.conf import settings
 
 from network_monitor.helpers.utils import NotFoundView
@@ -8,7 +8,7 @@ from .views import IndexView, RegisterView, LoginView, LogoutView, \
     EventDeleteView, UserAlertRuleListView, UserAlertRuleAddView, \
     UserAlertRuleEditView, UserAlertRuleDeleteView, DeviceSwitchActiveView, UserAlertRuleSwitchActiveView, \
     DevicesStatusAjaxView, DevicePrintLabelView, DiscoverDeviceView, StopDiscoverDeviceView, DeviceFixMacView, \
-    PingTestDeviceView
+    PingTestDeviceView, SettingGeneralView
 
 urlpatterns = [
     url(r'^$', IndexView.as_view(), name='index'),
@@ -37,4 +37,5 @@ urlpatterns = [
     url(r'^user_alert_rule/edit/(?P<pk>\d+)/$', UserAlertRuleEditView.as_view(), name="user_alert_rule-edit"),
     url(r'^user_alert_rule/switch-active/(?P<pk>\d+)/$', UserAlertRuleSwitchActiveView.as_view(), name="user_alert_rule-switch-active"),
     url(r'^user_alert_rule/delete/(?P<pk>\d+)/$', UserAlertRuleDeleteView.as_view(), name="user_alert_rule-delete"),
+    url(r'^settings/general', SettingGeneralView.as_view(), name="settings-general"),
 ]

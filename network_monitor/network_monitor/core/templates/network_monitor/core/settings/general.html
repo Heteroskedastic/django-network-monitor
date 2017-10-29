@@ -1,0 +1,42 @@
+{% extends "network_monitor/core/base.html" %}
+{% load bootstrap3 %}
+
+{% block extra_css %}
+<link href="{{ STATIC_URL }}css/bootstrap-tagsinput.css" rel="stylesheet">
+<link href="{{ STATIC_URL }}css/bootstrap-toggle.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block breadcrumb_items %}
+<li><a href="{% url 'core:settings-general' %}">Settings</a></li>
+<li>General Settings</li>
+{% endblock %}
+
+{% block content %}
+
+<h3 class="page-title">General Settings</h3>
+
+<form id="form-settings-general" method="POST" class="form-horizontal" action="">
+    {% csrf_token %}
+    <div class="panel panel-info">
+        <div class="panel-heading"><h4>DHCP Scanning Settings</h4></div>
+        <div class="panel-body">
+            {% bootstrap_form forms.dhcp_scan layout='horizontal' form_group_class='form-group row' horizontal_label_class='col-md-3'%}
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="col-md-2 control-label"></label>
+        <div class="col-md-9">
+            <button type="submit" class="btn btn-primary"><span class="fa fa-save"></span> Save</button>
+            <a class="btn btn-default" href="{% url 'core:index' %}"><span class="fa fa-close"></span> Cancel</a>
+        </div>
+    </div>
+</form>
+
+
+{% endblock content %}
+
+{% block extra_js %}
+<script src="{{ STATIC_URL }}js/bootstrap-tagsinput.min.js"></script>
+<script src="{{ STATIC_URL }}js/bootstrap-toggle.min.js"></script>
+{% endblock %}
+

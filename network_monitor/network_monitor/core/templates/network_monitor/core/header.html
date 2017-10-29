@@ -13,14 +13,15 @@
         <div id="navbar" class="navbar-collapse collapse">
         {% if user.is_authenticated %}
           <ul class="nav navbar-nav">
-            <li class="{% active_if 'core:device-list' %}"><a href="{% url 'core:device-list' %}"><span class="fa fa-th-list"></span> Devices</a></li>
+            <li class="{% active_if 'core:device-list' 'core:device-add' 'core:device-edit' 'core:device-discover' 'core:device-features' %}"><a href="{% url 'core:device-list' %}"><span class="fa fa-th-list"></span> Devices</a></li>
             <li class="{% active_if 'core:event-list' %}"><a href="{% url 'core:event-list' %}"><span class="fa fa-bullhorn"></span> Events </a></li>
+            <li class="{% active_if 'core:user_alert_rule-list' 'core:user_alert_rule-add'  'core:user_alert_rule-edit' %}"><a href="{% url 'core:user_alert_rule-list' %}"><span class="fa fa-bell"></span> Alert Rules</a></li>
           </ul>
           <ul class="nav navbar-nav navbar-right">
             <li class="dropdown {% active_if 'core:user_alert_rule-list' %}">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="fa fa-gears"></span> Settings <span class="caret"></span></a>
               <ul class="dropdown-menu">
-                <li><a href="{% url 'core:user_alert_rule-list' %}"><span class="fa fa-bell"></span> Alert Rules</a></li>
+                <li><a href="{% url 'core:settings-general' %}"><span class="fa fa-gear"></span> General Settings</a></li>
               </ul>
             </li>
             <li class="dropdown {% active_if 'core:profile' %}">
